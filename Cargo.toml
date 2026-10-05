@@ -10,6 +10,7 @@ members = [
     "crates/realm-core",
     "crates/realm-compiler",
     "crates/realm-layout",
+    "crates/realm-lod",
     "crates/realm-render",
     "crates/realm-replay",
     "crates/realm-cli",
@@ -35,5 +36,6 @@ navi-actions = { path = "crates/navi-actions" }
 realm-core = { path = "crates/realm-core" }
 realm-compiler = { path = "crates/realm-compiler" }
 realm-layout = { path = "crates/realm-layout" }
+realm-lod = { path = "crates/realm-lod" }
 realm-render = { path = "crates/realm-render" }
 realm-replay = { path = "crates/realm-replay" }

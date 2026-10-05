@@ -9,14 +9,16 @@ embodied, observable presence.
 machine state → semantic state → spatial state → human perception
 ```
 
-**Status: Phase 4 (sandboxed intervention) complete.** Phase 0 built the semantic layer;
+**Status: Phase 5 (adaptive world generation) complete.** Phase 0 built the semantic layer;
 Phase 1 projected it into a spatial realm; Phase 2 made Navi's attention
 move through it and explain itself; Phase 3 makes the whole incident
 replayable — every state change is an event, the realm can be rewound to
 any instant, compared across instants or against a counterfactual fork,
 and streamed to clients as a snapshot plus verifiable deltas; Phase 4 lets
 Navi act — block, isolate, revoke, roll back — behind the approval gates,
-in a sandbox, with every outcome evidenced and independently verified.
+in a sandbox, with every outcome evidenced and independently verified;
+Phase 5 makes the realm more detailed where attention is and lays it out
+along the chain that matters for the incident at hand.
 
 ![The repo + runtime scenario rendered as a realm](docs/realm-repo-runtime.svg)
 
@@ -41,6 +43,7 @@ interactive version.*
 | `navi-cli` | The `navi` binary. |
 | `realm-core` | The versioned realm grammar (§3), Realm IR (§4), visual contracts, and the validator every renderer must pass. |
 | `realm-compiler` | `SemanticGraph → Realm`. Pure and deterministic; no security reasoning of its own. |
+| `realm-lod` | Semantic level of detail around the attention (compress, never conceal) and context lenses (IAM, network, supply chain). |
 | `realm-layout` | Deterministic 2D containment layout on an integer grid. |
 | `realm-render` | Disposable renderers: terminal text and standalone SVG. No security logic. |
 | `realm-replay` | The security DVR: a realm per instant, snapshot + ordered deltas with per-frame digests, verified reconstruction, semantic COMPARE. |
@@ -138,6 +141,22 @@ navi act cancel  approved.json act:isolate --by oncall --reason "false positive"
 realm dvr sandbox.json -o sandbox-dvr.html
 ```
 
+## Adaptive world generation (Phase 5)
+
+| Directive clause | Enforcement |
+|---|---|
+| §11 Semantic level of detail | `--lod attention` expands every place on the path to the attention and collapses the rest below `--depth` (default 2). Attention is the operator's `--focus`, else where Navi is attending, else the target of the strongest hazard — and the view says which. |
+| Doctrine VI Compress, never conceal | A collapsed place shows what it stands for: how many places it hides, the worst trust inside, corruption, and the strongest hazard inside (`⊞~UNEXPLAINED`). Edges, hazards, controls and Navi pointing into hidden detail are drawn at the nearest visible place and still name the real endpoint (`— really shop-api:1.42.0 → api`; `main shown at elci/shop`). `View::check` recomputes every detail level and aggregate and requires every focus to be visible and every hazard to land on something carrying it; renderers refuse a view that fails (`Concealment`). |
+| §12 Context-sensitive geography | A lens strip lays the incident out along the directive's chain — IAM (identity → credential → role → permission → resource), network (host → interface → boundary → destination), supply chain (developer → repository → CI → artefact → registry → deployment). The lens is chosen from the classes around the attention, weighting what is under attack above who is attacking, and states why (`iam — attention involves ci-deploy-token (credential)`); ties and no-signal cases are reported, not guessed. `--lens` forces or disables it. Primitives, glyphs and colours are unchanged — only geometry adapts. |
+
+```sh
+realm render tests/fixtures/scenarios/repo-runtime.json --lod attention
+realm render tests/fixtures/scenarios/token-theft.json  --lod attention -f svg -o view.svg
+realm render tests/fixtures/scenarios/repo-runtime.json --lod attention --focus ent:branch-main --depth 1
+realm replay tests/fixtures/logs/repo-runtime.log.json --at 3200 --lod attention
+realm render tests/fixtures/scenarios/repo-runtime.json --lod attention -f json   # the view itself
+```
+
 ## Usage
 
 ```sh
@@ -218,6 +237,8 @@ observation (directive §26, reverse resolution):
   reliability conditions.
 - The sandbox models flows, credentials and the controls interventions add;
   it does not model collateral service impact yet (§17 ghosts).
+- Level of detail and lenses are available for text, SVG and JSON; the
+  interactive HTML and DVR pages still draw full detail.
 - An entity with several `contains` parents is nested under the first by
   relationship id; edges are drawn centre-to-centre without routing.
 
@@ -228,13 +249,13 @@ See [`ROADMAP.md`](ROADMAP.md).
 ## Testing
 
 ```sh
-cargo test                                   # 184 tests
+cargo test                                   # 194 tests
 cargo clippy --all-targets -- -D warnings
 ```
 
 Acceptance tests (`crates/navi-graph/tests/acceptance.rs`,
 `crates/realm-compiler/tests/phase1.rs`, `phase2.rs`,
 `crates/navi-events/tests/log.rs`, `crates/realm-replay/tests/replay.rs`,
-`crates/navi-actions/tests/act.rs`) each start from a valid scenario
+`crates/navi-actions/tests/act.rs`, `crates/realm-lod/tests/lod.rs`) each start from a valid scenario
 and inject exactly one fault — into the semantic graph for Phase 0, into
 compiled Realm IR for Phase 1.

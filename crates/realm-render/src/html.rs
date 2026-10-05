@@ -79,7 +79,7 @@ fn data(realm: &Realm, layout: &Layout) -> Value {
 }
 
 pub fn render(realm: &Realm, layout: &Layout) -> String {
-    let svg = svg::render(realm, layout);
+    let svg = svg::render(realm, layout, None);
     // Escape markup-significant characters as JSON unicode escapes, so no
     // string in the data can close or open an element inside <script>.
     let data = data(realm, layout)

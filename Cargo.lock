@@ -286,6 +286,7 @@ dependencies = [
  "realm-compiler",
  "realm-core",
  "realm-layout",
+ "realm-lod",
  "realm-render",
  "realm-replay",
  "serde_json",
@@ -323,12 +324,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "realm-lod"
+version = "0.1.0"
+dependencies = [
+ "navi-events",
+ "navi-graph",
+ "navi-ontology",
+ "realm-compiler",
+ "realm-core",
+ "realm-render",
+ "realm-replay",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "realm-render"
 version = "0.1.0"
 dependencies = [
  "navi-ontology",
  "realm-core",
  "realm-layout",
+ "realm-lod",
  "serde_json",
 ]
 

@@ -22,8 +22,9 @@ the next one starts.
       injection), `navi-actions` (approve / cancel in the log; run / roll
       back in the sandbox as counterfactual branches), ontology 0.3
       (verified interventions can be lifted), token-theft scenario.
-- [ ] **Phase 5 — adaptive world generation.** Semantic LOD, domain-specific
-      geography (§11, §12).
+- [x] **Phase 5 — adaptive world generation.** `realm-lod`: attention-driven
+      level of detail with aggregates and re-anchoring checked against
+      concealment; IAM / network / supply-chain lenses chosen from data.
 - [ ] **Phase 6 — production autonomy.** Only after replay, provenance,
       rollback, authority and verification have demonstrated reliability.
 

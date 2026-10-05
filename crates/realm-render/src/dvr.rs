@@ -109,7 +109,7 @@ pub fn render(frames: &[DvrFrame]) -> Result<String, Refused> {
             json!({
                 "at": f.at.to_string(),
                 "lines": f.lines,
-                "svg": svg::render(f.realm, &layout),
+                "svg": svg::render(f.realm, &layout, None),
                 "state": summaries(f.realm),
             })
         })

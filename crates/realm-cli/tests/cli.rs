@@ -222,3 +222,45 @@ fn compare_against_a_branch_requires_its_parent() {
     assert_eq!(code, 1);
     assert!(err.contains("is not a branch forked from"));
 }
+
+#[test]
+fn attention_view_from_the_cli() {
+    let (code, out, _) = realm(&["render", &scenario("token-theft"), "--lod", "attention"]);
+    assert_eq!(code, 0);
+    assert!(out.contains("VIEW   attention payments-gateway"));
+    assert!(out.contains("LENS   iam"));
+    let (code, json, _) = realm(&[
+        "render",
+        &scenario("repo-runtime"),
+        "--lod",
+        "attention",
+        "-f",
+        "json",
+    ]);
+    assert_eq!(code, 0);
+    let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+    assert_eq!(v["focus"][0], "realm:ent:api-pod-2");
+    let (code, _, err) = realm(&[
+        "render",
+        &scenario("repo-runtime"),
+        "--lod",
+        "attention",
+        "--focus",
+        "ent:nope",
+    ]);
+    assert_eq!(code, 1);
+    assert!(err.contains("not in this realm"));
+    let (code, out, _) = realm(&[
+        "replay",
+        &log_fixture("repo-runtime"),
+        "--at",
+        "3200",
+        "--lod",
+        "attention",
+        "--depth",
+        "1",
+    ]);
+    assert_eq!(code, 0);
+    assert!(out.starts_with("AT t+3200ms"));
+    assert!(out.contains("VIEW"));
+}

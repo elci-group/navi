@@ -1,6 +1,9 @@
 use crate::common::*;
+use crate::lod::ViewCtx;
+use crate::lod::{aggregate_hazard, aggregate_line};
 use realm_core::{contract, wire, Line, Primitive, Realm};
 use realm_layout::{Layout, Rect, UNIVERSE_ID};
+use realm_lod::LensStrip;
 
 struct Canvas {
     w: usize,
@@ -80,7 +83,7 @@ impl Canvas {
     }
 }
 
-pub fn render(realm: &Realm, layout: &Layout) -> String {
+pub(crate) fn render(realm: &Realm, layout: &Layout, ctx: Option<&ViewCtx>) -> String {
     let mut cv = Canvas::new(layout.width, layout.height);
     let mut order: Vec<(&String, &realm_layout::Placed)> = layout.places.iter().collect();
     order.sort_by_key(|(id, p)| (p.depth, (*id).clone()));
@@ -100,7 +103,25 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
         let vc = &e.visual_contract;
         cv.frame(r, Some(vc.line));
         let max = r.x + r.w - 1;
-        if p.container {
+        let agg = ctx.and_then(|c| c.view.aggregates.get(id.as_str()));
+        if let Some(a) = agg {
+            // Collapsed: compress, never conceal.
+            cv.puts(
+                r.x + 2,
+                r.y + 1,
+                &format!("{} {}", vc.glyph, vc.label),
+                max - 1,
+            );
+            cv.puts(
+                r.x + 2,
+                r.y + 2,
+                &format!("{} · {}", markers(realm, e), aggregate_line(a)),
+                max - 1,
+            );
+            if let Some(h) = aggregate_hazard(a) {
+                cv.puts(r.x + 2, r.y + 3, &h, max - 1);
+            }
+        } else if p.container {
             let hz = hazard_mark(e).map(|h| format!(" {h}")).unwrap_or_default();
             let title = format!(" {} {} · {}{hz} ", vc.glyph, vc.label, markers(realm, e));
             cv.puts(r.x + 2, r.y, &title, max - 1);
@@ -129,19 +150,26 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
         realm.source_digest,
         realm.epoch
     );
+    if let Some(c) = ctx {
+        out.push_str(&view_header(realm, c));
+    }
     out.push_str(&cv.finish());
+    if let Some(strip) = ctx.and_then(|c| c.view.lens.as_ref()) {
+        out.push_str(&lens_section(realm, ctx.expect("lens implies view"), strip));
+    }
 
     if !realm.edges.is_empty() {
         out.push_str("\nCONNECTIONS\n");
         for e in &realm.edges {
             out.push_str(&format!(
-                "  {} {:<9} {} → {}  ({})  [{}]\n",
+                "  {} {:<9} {} → {}  ({})  [{}]{}\n",
                 e.visual_contract.glyph,
                 wire(&e.semantic_type),
                 name(realm, &e.from),
                 name(realm, &e.to),
                 e.visual_contract.label,
-                source_list(&e.source_ids)
+                source_list(&e.source_ids),
+                really_edge(ctx, e)
             ));
         }
     }
@@ -172,13 +200,14 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
             let actor = h.actor.as_deref().map_or("?", |a| name(realm, a));
             let targets: Vec<_> = h.targets.iter().map(|t| name(realm, t)).collect();
             out.push_str(&format!(
-                "  {} {}  ({})  actor {actor} → {}  view {}  [{}]\n",
+                "  {} {}  ({})  actor {actor} → {}  view {}  [{}]{}\n",
                 h.visual_contract.glyph,
                 h.visual_contract.label,
                 h.confidence.estimator,
                 targets.join(", "),
                 wire(&h.view),
-                source_list(&h.source_ids)
+                source_list(&h.source_ids),
+                really_hazard(ctx, h)
             ));
         }
     }
@@ -231,4 +260,112 @@ pub fn trace(realm: &Realm) -> String {
         out.push('\n');
     }
     out
+}
+
+fn view_header(realm: &Realm, c: &ViewCtx) -> String {
+    let focus: Vec<&str> = c.view.focus.iter().map(|f| c.original_name(f)).collect();
+    let shown = realm.entities.len();
+    let total = c.original.entities.len();
+    let mut s = format!(
+        "VIEW   attention {} ({}) · depth {} · {shown} of {total} places drawn, {} collapsed\n",
+        if focus.is_empty() {
+            "—".into()
+        } else {
+            focus.join(", ")
+        },
+        c.view.focus_reason,
+        c.view.depth,
+        c.view.aggregates.len()
+    );
+    if let Some(n) = &c.view.lens_note {
+        s.push_str(&format!("       {n}\n"));
+    }
+    for r in c.view.reanchored(c.original) {
+        s.push_str(&format!(
+            "       {} shown at {}\n",
+            c.original_name(&r.original),
+            c.original_name(&r.shown_at)
+        ));
+    }
+    s.push('\n');
+    s
+}
+
+fn really_edge(ctx: Option<&ViewCtx>, e: &realm_core::RealmEdge) -> String {
+    let Some(c) = ctx else { return String::new() };
+    match c.original.edges.iter().find(|o| o.realm_id == e.realm_id) {
+        Some(o) if (o.from.as_str(), o.to.as_str()) != (e.from.as_str(), e.to.as_str()) => {
+            format!(
+                "  — really {} → {}",
+                c.original_name(&o.from),
+                c.original_name(&o.to)
+            )
+        }
+        _ => String::new(),
+    }
+}
+
+fn really_hazard(ctx: Option<&ViewCtx>, h: &realm_core::RealmHazard) -> String {
+    let Some(c) = ctx else { return String::new() };
+    match c.original.hazards.iter().find(|o| o.realm_id == h.realm_id) {
+        Some(o) if o.targets != h.targets => {
+            let t: Vec<&str> = o.targets.iter().map(|t| c.original_name(t)).collect();
+            format!("  — really → {}", t.join(", "))
+        }
+        _ => String::new(),
+    }
+}
+
+fn lens_section(realm: &Realm, c: &ViewCtx, strip: &LensStrip) -> String {
+    const W: usize = 24;
+    let mut s = format!("\nLENS   {} — {}\n", wire(&strip.lens), strip.reason);
+    let head: Vec<String> = strip
+        .stages
+        .iter()
+        .map(|st| format!("{:<W$}", st.name.to_uppercase()))
+        .collect();
+    s.push_str(&format!("  {}\n", head.join("").trim_end()));
+    let rows = strip
+        .stages
+        .iter()
+        .map(|st| st.entities.len())
+        .max()
+        .unwrap_or(0);
+    for i in 0..rows {
+        let cells: Vec<String> = strip
+            .stages
+            .iter()
+            .map(|st| {
+                let cell = st
+                    .entities
+                    .get(i)
+                    .and_then(|id| c.original.entity(id))
+                    .map_or(String::new(), |e| {
+                        let hz = e.risk.max_state.map_or(String::new(), |x| {
+                            format!(
+                                " {}",
+                                contract::glyph(realm_core::grammar::hazard_primitive(x))
+                            )
+                        });
+                        format!("{} {}{hz}", e.visual_contract.glyph, e.name)
+                    });
+                let cell: String = cell.chars().take(W - 2).collect();
+                format!("{cell:<W$}")
+            })
+            .collect();
+        s.push_str(&format!("  {}\n", cells.join("").trim_end()));
+    }
+    for id in &strip.edges {
+        if let Some(e) = c.original.edges.iter().find(|e| &e.realm_id == id) {
+            s.push_str(&format!(
+                "  {} {} → {} ({})\n",
+                e.visual_contract.glyph,
+                c.original_name(&e.from),
+                c.original_name(&e.to),
+                e.visual_contract.label
+            ));
+        }
+    }
+    let _ = realm;
+    s
 }

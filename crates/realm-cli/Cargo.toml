@@ -20,6 +20,7 @@ clap.workspace = true
 navi-events.workspace = true
 navi-ontology.workspace = true
 realm-replay.workspace = true
+realm-lod.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

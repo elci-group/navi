@@ -1,0 +1,19 @@
+[package]
+name = "realm-lod"
+description = "Semantic level of detail and context-sensitive lenses for the realm: compress, never conceal."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+navi-ontology.workspace = true
+realm-core.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+navi-graph.workspace = true
+navi-events.workspace = true
+realm-compiler.workspace = true
+realm-render.workspace = true
+realm-replay.workspace = true
+serde_json.workspace = true

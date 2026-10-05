@@ -34,6 +34,8 @@ pub enum RealmViolationCode {
     MissingEvidence,
     /// §13/§22: Navi's movement or waypoint state disagrees with the realm.
     TrajectoryViolation,
+    /// Doctrine VI: a level-of-detail view hides something it must show.
+    Concealment,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -41,6 +43,20 @@ pub struct RealmViolation {
     pub code: RealmViolationCode,
     pub subject: String,
     pub message: String,
+}
+
+impl RealmViolation {
+    pub fn new(
+        code: RealmViolationCode,
+        subject: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
+        Self {
+            code,
+            subject: subject.into(),
+            message: message.into(),
+        }
+    }
 }
 
 impl fmt::Display for RealmViolation {

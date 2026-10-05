@@ -40,6 +40,98 @@ enum Format {
     Json,
 }
 
+#[derive(Clone, Copy, ValueEnum, PartialEq)]
+enum Lod {
+    /// Every place drawn (default).
+    Full,
+    /// Semantic level of detail around the attention (§11).
+    Attention,
+}
+
+#[derive(Clone, Copy, ValueEnum)]
+enum LensArg {
+    Auto,
+    None,
+    Iam,
+    Network,
+    SupplyChain,
+}
+
+#[derive(clap::Args, Clone)]
+struct ViewArgs {
+    /// Level of detail.
+    #[arg(long, value_enum, default_value = "full")]
+    lod: Lod,
+    /// Focus on these entities (e.g. ent:api-pod-2); default: where Navi is attending.
+    #[arg(long)]
+    focus: Vec<String>,
+    /// Containment depth always expanded.
+    #[arg(long, default_value_t = 2)]
+    depth: usize,
+    /// Context lens (§12).
+    #[arg(long, value_enum, default_value = "auto")]
+    lens: LensArg,
+}
+
+impl ViewArgs {
+    fn spec(&self) -> Option<realm_lod::ViewSpec> {
+        (self.lod == Lod::Attention).then(|| realm_lod::ViewSpec {
+            focus: self
+                .focus
+                .iter()
+                .map(|f| {
+                    if f.starts_with("realm:") {
+                        f.clone()
+                    } else {
+                        format!("realm:{f}")
+                    }
+                })
+                .collect(),
+            depth: self.depth,
+            lens: match self.lens {
+                LensArg::Auto => realm_lod::LensRequest::Auto,
+                LensArg::None => realm_lod::LensRequest::None,
+                LensArg::Iam => realm_lod::LensRequest::Fixed(realm_lod::Lens::Iam),
+                LensArg::Network => realm_lod::LensRequest::Fixed(realm_lod::Lens::Network),
+                LensArg::SupplyChain => realm_lod::LensRequest::Fixed(realm_lod::Lens::SupplyChain),
+            },
+        })
+    }
+}
+
+fn render_with(realm: &Realm, format: Format, args: &ViewArgs) -> Result<String, String> {
+    let Some(spec) = args.spec() else {
+        return match format {
+            Format::Text => realm_render::text(realm),
+            Format::Svg => realm_render::svg(realm),
+            Format::Html => realm_render::html(realm),
+            Format::Json => {
+                let v = realm.validate();
+                if v.is_empty() {
+                    Ok(serde_json::to_string_pretty(&realm_layout::layout(realm))
+                        .expect("serializable")
+                        + "\n")
+                } else {
+                    Err(realm_render::Refused(v))
+                }
+            }
+        }
+        .map_err(|e| e.to_string());
+    };
+    let known: std::collections::BTreeSet<&str> =
+        realm.entities.iter().map(|e| e.realm_id.as_str()).collect();
+    if let Some(f) = spec.focus.iter().find(|f| !known.contains(f.as_str())) {
+        return Err(format!("focus {f} is not in this realm"));
+    }
+    let view = realm_lod::view(realm, &spec);
+    match format {
+        Format::Text => realm_render::text_view(realm, &view).map_err(|e| e.to_string()),
+        Format::Svg => realm_render::svg_view(realm, &view).map_err(|e| e.to_string()),
+        Format::Json => Ok(serde_json::to_string_pretty(&view).expect("serializable") + "\n"),
+        Format::Html => Err("--lod attention is available for text, svg and json".into()),
+    }
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// Compile a navi state document into Realm IR (JSON).
@@ -55,6 +147,8 @@ enum Command {
         file: PathBuf,
         #[arg(short, long, value_enum, default_value = "text")]
         format: Format,
+        #[command(flatten)]
+        view: ViewArgs,
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -68,6 +162,8 @@ enum Command {
         at: Option<i64>,
         #[arg(short, long, value_enum, default_value = "text")]
         format: Format,
+        #[command(flatten)]
+        view: ViewArgs,
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -203,25 +299,14 @@ fn main() -> ExitCode {
         Command::Render {
             file,
             format,
+            view,
             output,
         } => {
             let realm = match load(&file) {
                 Ok(r) => r,
                 Err(e) => return fail(e),
             };
-            let out = match format {
-                Format::Text => realm_render::text(&realm),
-                Format::Svg => realm_render::svg(&realm),
-                Format::Html => realm_render::html(&realm),
-                Format::Json => {
-                    let l = realm_layout::layout(&realm);
-                    match realm.validate().is_empty() {
-                        true => Ok(serde_json::to_string_pretty(&l).expect("serializable") + "\n"),
-                        false => Err(realm_render::Refused(realm.validate())),
-                    }
-                }
-            };
-            match out {
+            match render_with(&realm, format, &view) {
                 Ok(s) => emit(output, &s),
                 Err(e) => fail(e),
             }
@@ -237,6 +322,7 @@ fn main() -> ExitCode {
             log,
             at,
             format,
+            view,
             output,
         } => {
             let r = match replay(&log) {
@@ -253,16 +339,18 @@ fn main() -> ExitCode {
                     log.display()
                 ));
             };
-            let out = match format {
-                Format::Text => realm_render::text(&frame.realm).map(|s| {
-                    let lines: Vec<String> = frame.lines.iter().map(|l| format!("  {l}")).collect();
-                    format!("AT {}\n{}\n\n{s}", frame.at, lines.join("\n"))
-                }),
-                Format::Svg => realm_render::svg(&frame.realm),
-                Format::Html => realm_render::html(&frame.realm),
-                Format::Json => {
-                    Ok(serde_json::to_string_pretty(&frame.realm).expect("serializable") + "\n")
-                }
+            let out = if view.lod == Lod::Full && matches!(format, Format::Json) {
+                Ok(serde_json::to_string_pretty(&frame.realm).expect("serializable") + "\n")
+            } else {
+                render_with(&frame.realm, format, &view).map(|s| {
+                    if matches!(format, Format::Text) {
+                        let lines: Vec<String> =
+                            frame.lines.iter().map(|l| format!("  {l}")).collect();
+                        format!("AT {}\n{}\n\n{s}", frame.at, lines.join("\n"))
+                    } else {
+                        s
+                    }
+                })
             };
             match out {
                 Ok(s) => emit(output, &s),

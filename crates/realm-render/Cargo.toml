@@ -10,3 +10,4 @@ navi-ontology.workspace = true
 realm-core.workspace = true
 realm-layout.workspace = true
 serde_json.workspace = true
+realm-lod.workspace = true

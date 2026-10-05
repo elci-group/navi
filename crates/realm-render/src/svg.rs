@@ -1,4 +1,5 @@
 use crate::common::*;
+use crate::lod::{aggregate_hazard, aggregate_line, ViewCtx};
 use realm_core::{contract, wire, Line, Primitive, Realm, Token};
 use realm_layout::{Layout, UNIVERSE_ID};
 use std::fmt::Write;
@@ -47,7 +48,7 @@ fn prov(p: &navi_ontology::Provenance) -> String {
     serde_json::to_string(p).unwrap_or_default()
 }
 
-pub fn render(realm: &Realm, layout: &Layout) -> String {
+pub(crate) fn render(realm: &Realm, layout: &Layout, ctx: Option<&ViewCtx>) -> String {
     let map_w = layout.width * SX;
     let map_h = layout.height * SY;
     let hud_h: u32 = realm
@@ -58,7 +59,18 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
         * 16;
     let legend: Vec<Primitive> = primitives_used(realm).into_iter().collect();
     let legend_h = (legend.len() as u32 + 2) * 16;
-    let top = TOP;
+    let strip = ctx.and_then(|c| c.view.lens.as_ref());
+    let view_line = if ctx.is_some() { 20 } else { 0 };
+    let band = strip.map_or(0, |st| {
+        56 + st
+            .stages
+            .iter()
+            .map(|x| x.entities.len() as u32)
+            .max()
+            .unwrap_or(0)
+            * 26
+    });
+    let top = TOP + view_line + band;
     let w = map_w + HUD_W + 40;
     let h = top + map_h.max(hud_h) + legend_h + 30;
     let mut s = String::new();
@@ -85,6 +97,23 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
             w - 14,
             esc(&b)
         );
+    }
+    if let Some(c) = ctx {
+        let focus: Vec<&str> = c.view.focus.iter().map(|f| c.original_name(f)).collect();
+        let _ = writeln!(
+            s,
+            r##"<text x="12" y="{}" fill="#8a8f98" font-size="12">VIEW · attention {} ({}) · depth {} · {} of {} places drawn, {} collapsed</text>"##,
+            TOP + 4,
+            esc(&focus.join(", ")),
+            esc(&c.view.focus_reason),
+            c.view.depth,
+            realm.entities.len(),
+            c.original.entities.len(),
+            c.view.aggregates.len()
+        );
+        if let Some(st) = strip {
+            lens_band(&mut s, c, st, TOP + view_line);
+        }
     }
     let _ = writeln!(s, r#"<g transform="translate(10,{top})">"#);
 
@@ -130,15 +159,22 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
             width(vc.line),
             dash(vc.line)
         );
-        let hz = hazard_mark(e);
-        let hz_tok = e
-            .risk
-            .max_state
-            .map(|st| match realm_core::grammar::hazard_primitive(st) {
+        let agg = ctx.and_then(|c| c.view.aggregates.get(id.as_str()));
+        let hz = match agg {
+            Some(a) => aggregate_hazard(a),
+            None => hazard_mark(e),
+        };
+        let mk = match agg {
+            Some(a) => format!("{} · {}", markers(realm, e), aggregate_line(a)),
+            None => markers(realm, e),
+        };
+        let hz_tok = agg.map_or(e.risk.max_state, |a| a.max_hazard).map(|st| {
+            match realm_core::grammar::hazard_primitive(st) {
                 Primitive::Enemy => Token::Hostile,
                 Primitive::Fog => Token::Fog,
                 _ => Token::Unclassified,
-            });
+            }
+        });
         if p.container {
             // One title line: children start on the next row.
             let _ = write!(
@@ -149,7 +185,7 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
                 vc.fill.color(),
                 esc(&vc.glyph.to_string()),
                 esc(&vc.label),
-                esc(&markers(realm, e))
+                esc(&mk)
             );
             if let (Some(hz), Some(t)) = (&hz, hz_tok) {
                 let _ = write!(
@@ -175,7 +211,7 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
                 r##"<text x="{}" y="{}" fill="#8a8f98" font-size="10">{}</text>"##,
                 x + 8,
                 y + 32,
-                esc(&markers(realm, e))
+                esc(&mk)
             );
             if let (Some(hz), Some(t)) = (&hz, hz_tok) {
                 let _ = writeln!(
@@ -423,4 +459,74 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
     }
     s.push_str("</svg>\n");
     s
+}
+
+/// The §12 lens: the incident laid along its chain, same contracts and
+/// colours as the map, above it.
+fn lens_band(s: &mut String, c: &ViewCtx, strip: &realm_lod::LensStrip, y0: u32) {
+    let col = 190u32;
+    let _ = writeln!(
+        s,
+        r##"<text x="12" y="{}" fill="#14a6d9" font-size="12">LENS · {} — {}</text>"##,
+        y0 + 14,
+        wire(&strip.lens),
+        esc(&strip.reason)
+    );
+    let mut centre = std::collections::BTreeMap::new();
+    for (i, st) in strip.stages.iter().enumerate() {
+        let x = 12 + i as u32 * col;
+        let _ = writeln!(
+            s,
+            r##"<text x="{x}" y="{}" fill="#8a8f98" font-size="10">{}</text>"##,
+            y0 + 32,
+            esc(&st.name.to_uppercase())
+        );
+        for (j, id) in st.entities.iter().enumerate() {
+            let Some(e) = c.original.entity(id) else {
+                continue;
+            };
+            let y = y0 + 40 + j as u32 * 26;
+            let vc = &e.visual_contract;
+            centre.insert(id.clone(), (x + 85, y + 10));
+            let _ = writeln!(
+                s,
+                r#"<g data-realm-id="{}" data-source-ids="{}" data-lens="{}"><title>{}</title><rect x="{x}" y="{y}" width="170" height="20" rx="3" fill="{}" fill-opacity="0.22" stroke="{}"{}/><text x="{}" y="{}" fill="{}" font-size="11">{} {}</text></g>"#,
+                esc(&e.realm_id),
+                esc(&e.source_ids.join(", ")),
+                wire(&strip.lens),
+                esc(&format!(
+                    "{} — {}",
+                    wire(&vc.primitive),
+                    vc.primitive.meaning()
+                )),
+                vc.fill.color(),
+                vc.stroke.color(),
+                dash(vc.line),
+                x + 6,
+                y + 14,
+                vc.fill.color(),
+                esc(&vc.glyph.to_string()),
+                esc(&e.name)
+            );
+        }
+    }
+    for id in &strip.edges {
+        let Some(e) = c.original.edges.iter().find(|e| &e.realm_id == id) else {
+            continue;
+        };
+        let (Some(a), Some(b)) = (centre.get(&e.from), centre.get(&e.to)) else {
+            continue;
+        };
+        let _ = writeln!(
+            s,
+            r#"<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="{}" stroke-width="{}"{} opacity="0.6"/>"#,
+            a.0,
+            a.1,
+            b.0,
+            b.1,
+            e.visual_contract.stroke.color(),
+            width(e.visual_contract.line),
+            dash(e.visual_contract.line)
+        );
+    }
 }

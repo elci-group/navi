@@ -5,6 +5,7 @@
 mod common;
 mod dvr;
 mod html;
+mod lod;
 mod svg;
 mod text;
 
@@ -27,7 +28,7 @@ impl std::fmt::Display for Refused {
 
 impl std::error::Error for Refused {}
 
-fn gate(realm: &Realm) -> Result<(), Refused> {
+pub(crate) fn gate(realm: &Realm) -> Result<(), Refused> {
     let v = realm.validate();
     if v.is_empty() {
         Ok(())
@@ -39,14 +40,34 @@ fn gate(realm: &Realm) -> Result<(), Refused> {
 /// Terminal rendering: a box-drawn map plus edge/control/hazard/Navi panels.
 pub fn text(realm: &Realm) -> Result<String, Refused> {
     gate(realm)?;
-    Ok(text::render(realm, &realm_layout::layout(realm)))
+    Ok(text::render(realm, &realm_layout::layout(realm), None))
+}
+
+/// Terminal rendering of a level-of-detail view (§11, §12).
+pub fn text_view(realm: &Realm, view: &realm_lod::View) -> Result<String, Refused> {
+    let (projected, ctx) = lod::prepare(realm, view)?;
+    Ok(text::render(
+        &projected,
+        &realm_layout::layout(&projected),
+        Some(&ctx),
+    ))
+}
+
+/// SVG rendering of a level-of-detail view (§11, §12).
+pub fn svg_view(realm: &Realm, view: &realm_lod::View) -> Result<String, Refused> {
+    let (projected, ctx) = lod::prepare(realm, view)?;
+    Ok(svg::render(
+        &projected,
+        &realm_layout::layout(&projected),
+        Some(&ctx),
+    ))
 }
 
 /// Standalone SVG. Every element carries `data-realm-id`,
 /// `data-source-ids` and a `<title>` with its provenance.
 pub fn svg(realm: &Realm) -> Result<String, Refused> {
     gate(realm)?;
-    Ok(svg::render(realm, &realm_layout::layout(realm)))
+    Ok(svg::render(realm, &realm_layout::layout(realm), None))
 }
 
 /// Navi's trajectory as text: every waypoint, the route taken to reach it,
