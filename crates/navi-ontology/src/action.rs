@@ -346,6 +346,23 @@ impl Action {
         Ok((next, None))
     }
 
+    /// State as of instant `t`, or `None` before the proposal existed.
+    pub fn state_at(&self, t: Timestamp) -> Option<ActionState> {
+        if t < self.proposed_at {
+            return None;
+        }
+        let upto = Action {
+            history: self
+                .history
+                .iter()
+                .take_while(|x| x.at() <= t)
+                .cloned()
+                .collect(),
+            ..self.clone()
+        };
+        Some(upto.state())
+    }
+
     pub fn approval(&self) -> Option<&Approval> {
         self.history.iter().find_map(|t| match t {
             ActionTransition::Authorise { approval, .. } => Some(approval),
@@ -428,6 +445,16 @@ mod tests {
         })
         .unwrap();
         assert_eq!(a.state(), ActionState::Verified);
+    }
+
+    #[test]
+    fn state_at_replays_history() {
+        let mut a = action();
+        run_to_executed(&mut a);
+        assert_eq!(a.state_at(Timestamp(-1)), None);
+        assert_eq!(a.state_at(Timestamp(0)), Some(ActionState::Proposed));
+        assert_eq!(a.state_at(Timestamp(2)), Some(ActionState::Executing));
+        assert_eq!(a.state_at(Timestamp(99)), Some(ActionState::Executed));
     }
 
     #[test]

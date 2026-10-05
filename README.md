@@ -9,9 +9,10 @@ embodied, observable presence.
 machine state → semantic state → spatial state → human perception
 ```
 
-**Status: Phase 1 (deterministic 2D realm) complete.** Phase 0 built the
-semantic layer; Phase 1 projects it into a spatial realm with a terminal and
-an SVG renderer.
+**Status: Phase 2 (Navi traversal) complete.** Phase 0 built the semantic
+layer; Phase 1 projected it into a spatial realm; Phase 2 makes Navi's
+attention move through that realm over time, and lets an operator select
+Navi — or anything else — to see why it is there.
 
 ![The repo + runtime scenario rendered as a realm](docs/realm-repo-runtime.svg)
 
@@ -19,8 +20,10 @@ an SVG renderer.
 branch, CI, artifact, registry) and a production region (ingress, services,
 pods, database). Navi is attending to `api-5d2b-2`, whose unattributed
 outbound connection is `SUSPICIOUS` at 55% — rendered as `?`, not as an
-enemy — and its proposed `ISOLATE` waits on human approval. Hover any
-element for its provenance.*
+enemy — and its proposed `ISOLATE` waits on human approval. The dotted cyan
+trail is Navi's attention crossing the egress bridge and back (`#4`, `#5`).
+Hover any element for its provenance; `realm render … -f html` gives the
+interactive version.*
 
 ## What exists
 
@@ -65,6 +68,16 @@ with the renderer absent.
 | §26 Determinism | Same state + same compiler version gives byte-identical RIR, layout and SVG, independent of input order. |
 | §26 Graceful incompleteness | Unplaced entities sit outside the estate instead of being guessed into it; stale entities are dashed and marked; controls whose enforcement wasn't observed don't count as guarding anything. |
 
+## Navi traversal (Phase 2)
+
+| Directive clause | Enforcement |
+|---|---|
+| §8 Visible cognition | `navi brief` answers WHERE / WHY / WHAT / CONFIDENCE / NEXT for any agent event, **headlessly** (in `navi-graph`). Belief is reported as of that event — a hypothesis promoted later shows its earlier state — and every value carried forward cites the event that set it (`since #5`). Navi's estimate and the hypothesis's own confidence are shown side by side, so a stale or premature estimate is visible. |
+| §7 No inferred intent | Ontology 0.2 adds optional `objective` and `next` to agent events. `next` must be a legal successor phase with a real target; with no declaration the brief says `undeclared` rather than guessing. |
+| §13 Movement means something | Between waypoints Navi's attention follows the cheapest route over the realm's real topology (containment, roads, doors, bridges, logical teleports). No path at all is an explicit teleport. The validator recomputes every route: claiming a teleport where an evidenced bridge exists, relocating a waypoint, or a HUD that disagrees with the trajectory is refused. |
+| §22 Interpolate movement, not semantics | The HTML timeline animates Navi along the validated route, but the brief snaps at the waypoint, and arrival is guaranteed by a timer, so semantic state never waits on an animation frame. |
+| §5 Selecting exposes the chain | The realm carries an evidence chain for every entity, edge, control and hazard, each rooted at the object's primary source and reaching at least one raw observation (validated). Clicking anything in the HTML view shows it. |
+
 ## Usage
 
 ```sh
@@ -80,7 +93,15 @@ navi policy
 `--json` is available on `validate` and `explain`.
 
 ```sh
+navi brief tests/fixtures/scenarios/repo-runtime.json agent:navi-01           # latest event
+navi brief tests/fixtures/scenarios/repo-runtime.json agent:navi-01 --at 3    # as of event #3
+navi brief tests/fixtures/scenarios/repo-runtime.json agent:navi-01 --all --json
+```
+
+```sh
 realm render tests/fixtures/scenarios/repo-runtime.json            # terminal map + HUD
+realm render tests/fixtures/scenarios/repo-runtime.json -f html -o realm.html   # interactive timeline
+realm trace  tests/fixtures/scenarios/repo-runtime.json            # every waypoint, route, brief
 realm render tests/fixtures/scenarios/repo-runtime.json -f svg -o realm.svg
 realm compile <state.json> -o realm.json   # Realm IR
 realm check realm.json                     # what a renderer checks before drawing
@@ -109,8 +130,9 @@ observation (directive §26, reverse resolution):
 - Documents are validated whole. The event-sourced log with snapshot +
   delta streaming (§15, §22) is Phase 3.
 - STIX import/export does not exist yet.
-- The realm is a snapshot: Navi does not yet move through it over time
-  (Phase 2), and there is no replay (Phase 3).
+- Only Navi moves over time. The rest of the realm is drawn at its final
+  state; replaying the whole estate (and rewinding / forking it) is Phase 3.
+- The HTML timeline follows the first agent in the realm.
 - An entity with several `contains` parents is nested under the first by
   relationship id; edges are drawn centre-to-centre without routing.
 
@@ -121,7 +143,7 @@ See [`ROADMAP.md`](ROADMAP.md).
 ## Testing
 
 ```sh
-cargo test                                   # 113 tests
+cargo test                                   # 137 tests
 cargo clippy --all-targets -- -D warnings
 ```
 

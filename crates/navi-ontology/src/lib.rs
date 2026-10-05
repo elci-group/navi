@@ -35,7 +35,7 @@ mod threat;
 mod time;
 
 pub use action::{Action, ActionState, ActionTransition, Approval, ApprovalKind, Principal};
-pub use agent::{Agent, AgentEvent, AgentPhase, AgentRole};
+pub use agent::{Agent, AgentEvent, AgentPhase, AgentRole, NextStep};
 pub use authority::{AuthorityLevel, AuthorityPolicy, Gate};
 pub use capability::{Capability, CapabilityKind, Expiry, RiskClass, Rollback};
 pub use confidence::{Confidence, Estimator};
@@ -57,4 +57,7 @@ pub use time::Timestamp;
 
 /// Version of this ontology. Bumped on any change to the meaning of a type
 /// (directive §3: "this ontology MUST be versioned").
-pub const ONTOLOGY_VERSION: &str = "navi-ontology/0.1";
+///
+/// 0.2: agent events may declare `objective` and `next` (§8 HUD), so the
+/// realm never has to infer what Navi intends to do next.
+pub const ONTOLOGY_VERSION: &str = "navi-ontology/0.2";

@@ -198,3 +198,32 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
     out.push_str("  markers: ok/unv/trust? trust · ~ ? ! hazard state · # + G controls (? unknown, - inactive) · @ Navi\n");
     out
 }
+
+pub fn trace(realm: &Realm) -> String {
+    let mut out = String::new();
+    for a in &realm.agents {
+        out.push_str(&format!(
+            "TRAJECTORY  {} ({})  ·  {} waypoint(s)\n",
+            a.name,
+            wire(&a.role),
+            a.trajectory.len()
+        ));
+        for w in &a.trajectory {
+            let at = w.location.as_deref().map_or("?", |l| name(realm, l));
+            out.push_str(&format!(
+                "\n#{:<3} {}  {:<12} @ {at}\n",
+                w.seq,
+                w.at,
+                wire(&w.phase)
+            ));
+            for step in &w.route {
+                out.push_str(&format!("      move  {}\n", step_label(realm, step)));
+            }
+            for l in brief_lines(realm, w) {
+                out.push_str(&format!("      {l}\n"));
+            }
+        }
+        out.push('\n');
+    }
+    out
+}

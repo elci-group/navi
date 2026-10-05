@@ -136,3 +136,24 @@ fn readme_sample_is_current() {
         std::fs::read_to_string(fixtures().join("../../docs/realm-repo-runtime.svg")).unwrap();
     assert!(svg == doc, "docs/realm-repo-runtime.svg is stale: regenerate with `realm render tests/fixtures/scenarios/repo-runtime.json -f svg -o docs/realm-repo-runtime.svg`");
 }
+
+#[test]
+fn trace_shows_movement_and_briefs() {
+    let (code, out, _) = realm(&["trace", &scenario("repo-runtime")]);
+    assert_eq!(code, 0);
+    assert!(out.contains("TRAJECTORY  LC-DEFENCE-01"));
+    assert!(out.contains("move  api-5d2b-2 ─bridge(rel:pod2-egress)→ 203.0.113.47"));
+    assert!(out.contains("NEXT        ACT → api-5d2b-2"));
+}
+
+#[test]
+fn html_render_is_self_contained() {
+    let (code, html, _) = realm(&["render", &scenario("credential-stuffing"), "-f", "html"]);
+    assert_eq!(code, 0);
+    assert!(html.starts_with("<!doctype html>"));
+    assert!(
+        !html.contains("src=\"http"),
+        "page must not load remote resources"
+    );
+    assert!(html.contains("const DATA = {"));
+}

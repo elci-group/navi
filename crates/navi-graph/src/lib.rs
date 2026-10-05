@@ -6,9 +6,11 @@
 //! authority model, and the agent event stream is a legal walk of the loop.
 //! A [`SemanticGraph`] only exists if all of that holds.
 
+mod brief;
 mod explain;
 mod validate;
 
+pub use brief::{AgentBrief, BriefConfidence, BriefNext, BriefWhat, BriefWhere, BriefWhy, Sourced};
 pub use explain::ExplainNode;
 pub use validate::{Code, Violation};
 

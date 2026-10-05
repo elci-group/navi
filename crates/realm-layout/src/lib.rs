@@ -261,6 +261,7 @@ mod tests {
             controls: vec![],
             hazards: vec![],
             agents: vec![],
+            evidence: vec![],
         };
         let l = layout(&realm);
         assert_eq!(l.places.len(), 1);

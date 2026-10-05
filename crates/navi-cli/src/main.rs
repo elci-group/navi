@@ -6,6 +6,21 @@ use navi_ontology::{AuthorityLevel, AuthorityPolicy, ONTOLOGY_VERSION};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+/// Stdout that tolerates a closed pipe (`navi … | head`): a reader going
+/// away is not an error worth panicking over.
+macro_rules! out {
+    ($($t:tt)*) => {{
+        use std::io::Write as _;
+        let _ = write!(std::io::stdout().lock(), $($t)*);
+    }};
+}
+macro_rules! outln {
+    ($($t:tt)*) => {{
+        use std::io::Write as _;
+        let _ = writeln!(std::io::stdout().lock(), $($t)*);
+    }};
+}
+
 #[derive(Parser)]
 #[command(
     name = "navi",
@@ -37,6 +52,19 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Explain an agent at one of its events: where, why, what, confidence, next.
+    Brief {
+        file: PathBuf,
+        agent: String,
+        /// Event sequence number (default: latest).
+        #[arg(long)]
+        at: Option<u64>,
+        /// Brief every event in order.
+        #[arg(long, conflicts_with = "at")]
+        all: bool,
+        #[arg(long)]
+        json: bool,
+    },
     /// Show the default production authority policy.
     Policy,
 }
@@ -63,12 +91,12 @@ fn main() -> ExitCode {
                         "valid": true, "ontology_version": ONTOLOGY_VERSION,
                         "digest": g.digest(), "counts": g.summary(),
                     });
-                    println!("{out:#}");
+                    outln!("{out:#}");
                 } else {
-                    println!("valid  {}  ({ONTOLOGY_VERSION})", file.display());
-                    println!("digest {}", g.digest());
+                    outln!("valid  {}  ({ONTOLOGY_VERSION})", file.display());
+                    outln!("digest {}", g.digest());
                     for (k, n) in g.summary() {
-                        println!("  {k:<14} {n}");
+                        outln!("  {k:<14} {n}");
                     }
                 }
                 ExitCode::SUCCESS
@@ -76,7 +104,7 @@ fn main() -> ExitCode {
             Err((msg, violations)) => {
                 if json {
                     let out = serde_json::json!({ "valid": false, "error": msg, "violations": violations.unwrap_or_default() });
-                    println!("{out:#}");
+                    outln!("{out:#}");
                 } else {
                     eprintln!("invalid {msg}");
                     for v in violations.unwrap_or_default() {
@@ -86,18 +114,18 @@ fn main() -> ExitCode {
                 ExitCode::from(1)
             }
         },
-        Command::Digest { file } => with_graph(&file, |g| println!("{}", g.digest())),
-        Command::Canonical { file } => with_graph(&file, |g| println!("{}", g.canonical_json())),
+        Command::Digest { file } => with_graph(&file, |g| outln!("{}", g.digest())),
+        Command::Canonical { file } => with_graph(&file, |g| outln!("{}", g.canonical_json())),
         Command::Explain { file, id, json } => {
             let Ok(g) = load(&file) else {
                 return with_graph(&file, |_| ());
             };
             match g.explain(&id) {
-                Some(tree) if json => println!(
+                Some(tree) if json => outln!(
                     "{}",
                     serde_json::to_string_pretty(&tree).expect("serializable")
                 ),
-                Some(tree) => print!("{}", tree.render()),
+                Some(tree) => out!("{}", tree.render()),
                 None => {
                     eprintln!("no object {id:?} in {}", file.display());
                     return ExitCode::from(2);
@@ -105,16 +133,60 @@ fn main() -> ExitCode {
             }
             ExitCode::SUCCESS
         }
+        Command::Brief {
+            file,
+            agent,
+            at,
+            all,
+            json,
+        } => {
+            let Ok(g) = load(&file) else {
+                return with_graph(&file, |_| ());
+            };
+            let Ok(id) = navi_ontology::AgentId::new(agent.clone()) else {
+                eprintln!("{agent:?} is not an agent id (agent:...)");
+                return ExitCode::from(2);
+            };
+            let seqs: Vec<Option<u64>> = if all {
+                g.agent_seqs(&id).into_iter().map(Some).collect()
+            } else {
+                vec![at]
+            };
+            let mut briefs = vec![];
+            for s in seqs {
+                match g.brief(&id, s) {
+                    Some(b) => briefs.push(b),
+                    None => {
+                        eprintln!(
+                            "no event {} for {id} in {}",
+                            s.map_or("(any)".into(), |s| format!("#{s}")),
+                            file.display()
+                        );
+                        return ExitCode::from(2);
+                    }
+                }
+            }
+            if json {
+                outln!(
+                    "{}",
+                    serde_json::to_string_pretty(&briefs).expect("serializable")
+                );
+            } else {
+                let text: Vec<String> = briefs.iter().map(|b| b.render(&g)).collect();
+                out!("{}", text.join("\n"));
+            }
+            ExitCode::SUCCESS
+        }
         Command::Policy => {
             let p = AuthorityPolicy::default_production();
-            println!("authority policy {}", p.version);
+            outln!("authority policy {}", p.version);
             for l in AuthorityLevel::ALL {
                 let mark = if l.mutates_reality() {
                     "mutates"
                 } else {
                     "reads"
                 };
-                println!("  {:<24} {:<8} {}", wire(&l), mark, wire(&p.gate(l)));
+                outln!("  {:<24} {:<8} {}", wire(&l), mark, wire(&p.gate(l)));
             }
             ExitCode::SUCCESS
         }

@@ -3,8 +3,17 @@ use realm_core::{contract, wire, Line, Primitive, Realm, Token};
 use realm_layout::{Layout, UNIVERSE_ID};
 use std::fmt::Write;
 
-const SX: u32 = 8;
-const SY: u32 = 18;
+pub(crate) const SX: u32 = 8;
+pub(crate) const SY: u32 = 18;
+pub(crate) const TOP: u32 = 40;
+
+/// Where Navi stands when attending to a place (inner-group coordinates).
+pub(crate) fn anchor(layout: &Layout, id: &str) -> Option<(u32, u32)> {
+    layout
+        .places
+        .get(id)
+        .map(|p| (p.rect.x * SX + 4, p.rect.y * SY + 4))
+}
 const HUD_W: u32 = 470;
 
 fn esc(s: &str) -> String {
@@ -49,7 +58,7 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
         * 16;
     let legend: Vec<Primitive> = primitives_used(realm).into_iter().collect();
     let legend_h = (legend.len() as u32 + 2) * 16;
-    let top = 40;
+    let top = TOP;
     let w = map_w + HUD_W + 40;
     let h = top + map_h.max(hud_h) + legend_h + 30;
     let mut s = String::new();
@@ -282,6 +291,66 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
                 dash(vc.line),
                 cy + 4,
                 esc(&vc.glyph.to_string())
+            );
+        }
+    }
+
+    // Navi's attention trail: every validated route step, then the
+    // waypoint numbers at each place attended.
+    for a in &realm.agents {
+        let mut seqs: std::collections::BTreeMap<&str, Vec<u64>> =
+            std::collections::BTreeMap::new();
+        for w in &a.trajectory {
+            if let Some(l) = w.location.as_deref() {
+                seqs.entry(l).or_default().push(w.seq);
+            }
+            for st in &w.route {
+                let (Some((x1, y1)), Some((x2, y2))) =
+                    (anchor(layout, &st.from), anchor(layout, &st.to))
+                else {
+                    continue;
+                };
+                let (color, d) = if st.movement == realm_core::Movement::Teleport {
+                    (Token::Teleport.color(), r#" stroke-dasharray="8 5""#)
+                } else {
+                    (Token::Navi.color(), r#" stroke-dasharray="2 4""#)
+                };
+                let _ = writeln!(
+                    s,
+                    r#"<g data-trail="{}" data-seq="{}"><title>{}</title><line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="{color}" stroke-width="2"{d} opacity="0.9"/></g>"#,
+                    esc(&a.realm_id),
+                    w.seq,
+                    esc(&format!("#{} {}", w.seq, step_label(realm, st)))
+                );
+            }
+        }
+        for (loc, list) in seqs {
+            let Some((x, y)) = anchor(layout, loc) else {
+                continue;
+            };
+            // Compress consecutive sequence numbers: #1–3,5–7.
+            let mut label: Vec<String> = vec![];
+            let mut i = 0;
+            while i < list.len() {
+                let mut j = i;
+                while j + 1 < list.len() && list[j + 1] == list[j] + 1 {
+                    j += 1;
+                }
+                label.push(if j > i {
+                    format!("{}–{}", list[i], list[j])
+                } else {
+                    list[i].to_string()
+                });
+                i = j + 1;
+            }
+            let label = format!("#{}", label.join(","));
+            let _ = writeln!(
+                s,
+                r#"<text x="{}" y="{}" fill="{}" font-size="9">{}</text>"#,
+                x + 13,
+                y - 4,
+                Token::Navi.color(),
+                esc(&label)
             );
         }
     }

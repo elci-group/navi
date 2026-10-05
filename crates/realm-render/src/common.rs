@@ -76,6 +76,10 @@ pub fn hud_lines(realm: &Realm, a: &RealmAgent) -> Vec<String> {
             .as_deref()
             .map_or("?".to_string(), |x| path(realm, x))
     ));
+    let brief = a.trajectory.last().map(|w| &w.brief);
+    if let Some(o) = brief.and_then(|b| b.objective.as_deref()) {
+        l.push(format!("  OBJECTIVE  {o}"));
+    }
     l.push(format!("  REASON     {}", a.reason));
     if let Some(h) = a
         .hypothesis
@@ -101,6 +105,10 @@ pub fn hud_lines(realm: &Realm, a: &RealmAgent) -> Vec<String> {
         l.push(format!("  CONFIDENCE {}  ({})", c.percent, c.estimator));
     }
     l.push(format!("  EXERCISING {}", wire(&a.authority)));
+    l.push(format!(
+        "  NEXT       {}",
+        next_label(realm, brief.and_then(|b| b.next.as_ref()))
+    ));
     l.push("  LOADOUT".into());
     for s in &a.loadout {
         let exp = if s.expired { "  [EXPIRED]" } else { "" };
@@ -173,4 +181,119 @@ pub fn primitives_used(realm: &Realm) -> BTreeSet<Primitive> {
 
 pub fn source_list(sources: &[String]) -> String {
     sources.join(", ")
+}
+
+pub fn next_label(realm: &Realm, n: Option<&realm_core::NextView>) -> String {
+    match n {
+        Some(n) => {
+            let tgt = n
+                .target
+                .as_deref()
+                .map_or(String::new(), |t| format!(" → {}", name(realm, t)));
+            format!("{}{tgt}: {}", wire(&n.phase), n.intent)
+        }
+        None => "undeclared".into(),
+    }
+}
+
+/// One-line description of a movement step.
+pub fn step_label(realm: &Realm, s: &realm_core::RouteStep) -> String {
+    let via = s.via.as_deref().map_or_else(
+        || "no topological path".to_string(),
+        |v| v.trim_start_matches("realm:").to_string(),
+    );
+    format!(
+        "{} ─{}({via})→ {}",
+        name(realm, &s.from),
+        wire(&s.movement),
+        name(realm, &s.to)
+    )
+}
+
+/// The §8 brief at a waypoint as text lines (shared by `trace` and HTML).
+pub fn brief_lines(realm: &Realm, w: &realm_core::Waypoint) -> Vec<String> {
+    let b = &w.brief;
+    let since = |s: Option<u64>| {
+        s.filter(|s| *s != w.seq)
+            .map_or(String::new(), |s| format!("  (since #{s})"))
+    };
+    let mut l = vec![];
+    l.push(format!(
+        "WHERE       {}{}",
+        if b.path.is_empty() {
+            "?".to_string()
+        } else {
+            b.path.join(" → ")
+        },
+        since(b.location_from_seq)
+    ));
+    l.push(format!("WHY         {}", b.reason));
+    if let Some(o) = &b.objective {
+        l.push(format!("  objective {o}"));
+    }
+    if let Some(h) = &b.hypothesis {
+        let enemy = b
+            .state_then
+            .is_some_and(|s| s >= navi_ontology::EpistemicState::Probable);
+        l.push(format!(
+            "  believes  {}{} — {} at the time  [{}]{}",
+            b.claim.as_deref().unwrap_or("?"),
+            if enemy { "" } else { "?" },
+            b.state_then.map_or("?".into(), |s| wire(&s)),
+            h.trim_start_matches("realm:"),
+            since(b.hypothesis_from_seq)
+        ));
+        l.push(format!(
+            "  evidence  {}",
+            if b.evidence_then.is_empty() {
+                "—".into()
+            } else {
+                b.evidence_then.join(", ")
+            }
+        ));
+    }
+    let act = match (&b.action, b.action_state_then) {
+        (Some(a), Some(s)) => format!("  on {} ({})", a.trim_start_matches("realm:"), wire(&s)),
+        _ => String::new(),
+    };
+    l.push(format!(
+        "WHAT        {} exercising {}{act}",
+        wire(&b.phase),
+        wire(&b.authority)
+    ));
+    match &b.confidence {
+        Some(c) => {
+            let held = b
+                .hypothesis_confidence_then
+                .as_ref()
+                .map_or(String::new(), |h| {
+                    let note = if h.basis_points == c.basis_points {
+                        ""
+                    } else {
+                        "  ≠ Navi's estimate"
+                    };
+                    format!("; hypothesis held {}{note}", h.percent)
+                });
+            l.push(format!(
+                "CONFIDENCE  {} ({}){held}{}",
+                c.percent,
+                c.estimator,
+                since(b.confidence_from_seq)
+            ));
+        }
+        None => l.push("CONFIDENCE  —  (no estimate given)".into()),
+    }
+    l.push(format!(
+        "NEXT        {}",
+        next_label(realm, b.next.as_ref())
+    ));
+    if !b.awaiting_authorisation.is_empty() {
+        let a: Vec<_> = b
+            .awaiting_authorisation
+            .iter()
+            .map(|x| x.trim_start_matches("realm:"))
+            .collect();
+        l.push(format!("  awaiting  {}", a.join(", ")));
+    }
+    l
 }

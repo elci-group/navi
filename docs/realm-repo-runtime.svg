@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1806" height="752" viewBox="0 0 1806 752" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="12">
-<desc>realm-grammar/0.1 · navi-ontology/0.1 · realm-compiler/0.1 · source sha256:803b031e9d3ed463e158387993923889217ee885dcb65c6cdf57e9e04147c33a</desc>
+<desc>realm-grammar/0.1 · navi-ontology/0.2 · realm-compiler/0.2 · source sha256:9af26aea65f948426f0a48220c63ad98f44c6d71837cd17784a8a44c13cb308a</desc>
 <rect x="0" y="0" width="1806" height="752" fill="#101418"/>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9d1d9"/></marker></defs>
-<text x="12" y="24" fill="#c9d1d9" font-size="14">REALM · sha256:803b031e9d3ed463e158387993923889217ee885dcb65c6cdf57e9e04147c33a · epoch t+4900ms</text>
+<text x="12" y="24" fill="#c9d1d9" font-size="14">REALM · sha256:9af26aea65f948426f0a48220c63ad98f44c6d71837cd17784a8a44c13cb308a · epoch t+4900ms</text>
 <g transform="translate(10,40)">
 <g data-realm-id="realm:universe"><rect x="0" y="0" width="1296" height="378" rx="6" fill="none" stroke="#3a4350" stroke-width="2"/><text x="8" y="13" fill="#8a8f98">U Universe — managed estate</text></g>
 <g data-realm-id="realm:ent:ext-203" data-source-ids="ent:ext-203" data-primitive="unknown_entity"><title>? 203.0.113.47
@@ -216,14 +216,20 @@ view silhouette · estimator supply-chain-drift@0.1
 actor ?
 sources hyp:dep-drift
 evidence [{&quot;observation&quot;:&quot;obs:dep-change&quot;}]</title><circle cx="210" cy="84" r="9" fill="#b8bec6" fill-opacity="0.45" stroke="#b8bec6" stroke-width="1.5" stroke-dasharray="2 3"/><text x="210" y="88" text-anchor="middle" fill="#ffffff" font-weight="bold">~</text></g>
+<g data-trail="realm:agent:navi-01" data-seq="4"><title>#4 api-5d2b-2 ─bridge(rel:pod2-egress)→ 203.0.113.47</title><line x1="676" y1="94" x2="1124" y2="22" stroke="#14a6d9" stroke-width="2" stroke-dasharray="2 4" opacity="0.9"/></g>
+<g data-trail="realm:agent:navi-01" data-seq="5"><title>#5 203.0.113.47 ─bridge(rel:pod2-egress)→ api-5d2b-2</title><line x1="1124" y1="22" x2="676" y2="94" stroke="#14a6d9" stroke-width="2" stroke-dasharray="2 4" opacity="0.9"/></g>
+<text x="689" y="90" fill="#14a6d9" font-size="9">#1–3,5–7</text>
+<text x="1137" y="18" fill="#14a6d9" font-size="9">#4</text>
 <g data-realm-id="realm:agent:navi-01" data-source-ids="agent:navi-01, agent:navi-01#7, agent:navi-01#6, agent:navi-01#5" data-primitive="navi"><title>NAVI / LC-DEFENCE-01  (hunter)
   PHASE      AUTHORISE  at t+4900ms
   TARGET     elci → prod → shop → api → api-5d2b-2
+  OBJECTIVE  Explain the unknown outbound connection from api-5d2b-2
   REASON     network isolation requires human approval; escalated
   HYPOTHESIS c2_beacon?  SUSPICIOUS
   ATT&amp;CK     TA0011
   CONFIDENCE 55%  (egress-anomaly@0.2)
   EXERCISING propose
+  NEXT       ACT → api-5d2b-2: isolate the pod once a human approves
   LOADOUT
     SCAN     query                    autonomous
     TRACE    correlate                autonomous
@@ -234,17 +240,19 @@ evidence [{&quot;observation&quot;:&quot;obs:dep-change&quot;}]</title><circle c
 <text x="1326" y="52" fill="#14a6d9" xml:space="preserve">NAVI / LC-DEFENCE-01  (hunter)</text>
 <text x="1326" y="68" fill="#c9d1d9" xml:space="preserve">  PHASE      AUTHORISE  at t+4900ms</text>
 <text x="1326" y="84" fill="#c9d1d9" xml:space="preserve">  TARGET     elci → prod → shop → api → api-5d2b-2</text>
-<text x="1326" y="100" fill="#c9d1d9" xml:space="preserve">  REASON     network isolation requires human approval; escalated</text>
-<text x="1326" y="116" fill="#c9d1d9" xml:space="preserve">  HYPOTHESIS c2_beacon?  SUSPICIOUS</text>
-<text x="1326" y="132" fill="#c9d1d9" xml:space="preserve">  ATT&amp;CK     TA0011</text>
-<text x="1326" y="148" fill="#c9d1d9" xml:space="preserve">  CONFIDENCE 55%  (egress-anomaly@0.2)</text>
-<text x="1326" y="164" fill="#c9d1d9" xml:space="preserve">  EXERCISING propose</text>
-<text x="1326" y="180" fill="#c9d1d9" xml:space="preserve">  LOADOUT</text>
-<text x="1326" y="196" fill="#c9d1d9" xml:space="preserve">    SCAN     query                    autonomous</text>
-<text x="1326" y="212" fill="#c9d1d9" xml:space="preserve">    TRACE    correlate                autonomous</text>
-<text x="1326" y="228" fill="#e0a030" xml:space="preserve">    ISOLATE  network_isolation        HUMAN APPROVAL REQUIRED</text>
-<text x="1326" y="244" fill="#c9d1d9" xml:space="preserve">  ACTIONS</text>
-<text x="1326" y="260" fill="#c9d1d9" xml:space="preserve">    ISOLATE → api-5d2b-2  PROPOSED  (awaiting authorisation)</text>
+<text x="1326" y="100" fill="#c9d1d9" xml:space="preserve">  OBJECTIVE  Explain the unknown outbound connection from api-5d2b-2</text>
+<text x="1326" y="116" fill="#c9d1d9" xml:space="preserve">  REASON     network isolation requires human approval; escalated</text>
+<text x="1326" y="132" fill="#c9d1d9" xml:space="preserve">  HYPOTHESIS c2_beacon?  SUSPICIOUS</text>
+<text x="1326" y="148" fill="#c9d1d9" xml:space="preserve">  ATT&amp;CK     TA0011</text>
+<text x="1326" y="164" fill="#c9d1d9" xml:space="preserve">  CONFIDENCE 55%  (egress-anomaly@0.2)</text>
+<text x="1326" y="180" fill="#c9d1d9" xml:space="preserve">  EXERCISING propose</text>
+<text x="1326" y="196" fill="#c9d1d9" xml:space="preserve">  NEXT       ACT → api-5d2b-2: isolate the pod once a human approves</text>
+<text x="1326" y="212" fill="#c9d1d9" xml:space="preserve">  LOADOUT</text>
+<text x="1326" y="228" fill="#c9d1d9" xml:space="preserve">    SCAN     query                    autonomous</text>
+<text x="1326" y="244" fill="#c9d1d9" xml:space="preserve">    TRACE    correlate                autonomous</text>
+<text x="1326" y="260" fill="#e0a030" xml:space="preserve">    ISOLATE  network_isolation        HUMAN APPROVAL REQUIRED</text>
+<text x="1326" y="276" fill="#c9d1d9" xml:space="preserve">  ACTIONS</text>
+<text x="1326" y="292" fill="#c9d1d9" xml:space="preserve">    ISOLATE → api-5d2b-2  PROPOSED  (awaiting authorisation)</text>
 <text x="12" y="442" fill="#8a8f98">LEGEND · realm-grammar/0.1</text>
 <text x="20" y="458" fill="#c9d1d9" xml:space="preserve">U  universe        managed estate</text>
 <text x="20" y="474" fill="#c9d1d9" xml:space="preserve">W  world           organisation / trust authority</text>

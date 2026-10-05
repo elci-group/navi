@@ -11,7 +11,7 @@ use navi_ontology::*;
 use realm_core::{contract, grammar, *};
 use std::collections::{BTreeMap, BTreeSet};
 
-pub const COMPILER_VERSION: &str = "realm-compiler/0.1";
+pub const COMPILER_VERSION: &str = "realm-compiler/0.2";
 
 fn rid(id: &impl ToString) -> String {
     realm_id(&id.to_string())
@@ -190,6 +190,7 @@ pub fn compile(g: &SemanticGraph) -> Realm {
                 authority: ev.map_or(AuthorityLevel::Observe, |e| e.authority),
                 loadout,
                 actions,
+                trajectory: vec![],
                 visual_contract: blank(),
             };
             ra.visual_contract = contract::agent(&ra);
@@ -276,6 +277,7 @@ pub fn compile(g: &SemanticGraph) -> Realm {
         controls,
         hazards,
         agents,
+        evidence: vec![],
     };
 
     let edges = g
@@ -301,5 +303,105 @@ pub fn compile(g: &SemanticGraph) -> Realm {
         })
         .collect();
     realm.edges = edges;
+
+    // Trajectories need the finished topology to route over.
+    let trajectories: Vec<Vec<Waypoint>> = realm
+        .agents
+        .iter()
+        .map(|a| trajectory(g, &realm, a))
+        .collect();
+    for (a, t) in realm.agents.iter_mut().zip(trajectories) {
+        a.trajectory = t;
+    }
+
+    let primaries: Vec<String> = realm
+        .entities
+        .iter()
+        .map(|x| x.source_ids[0].clone())
+        .chain(realm.edges.iter().map(|x| x.source_ids[0].clone()))
+        .chain(realm.controls.iter().map(|x| x.source_ids[0].clone()))
+        .chain(realm.hazards.iter().map(|x| x.source_ids[0].clone()))
+        .collect();
+    realm.evidence = primaries
+        .iter()
+        .filter_map(|src| {
+            g.explain(src).map(|t| Evidence {
+                realm_id: realm_id(src),
+                tree: evidence(&t),
+            })
+        })
+        .collect();
+    realm.evidence.sort_by(|a, b| a.realm_id.cmp(&b.realm_id));
     realm
+}
+
+fn evidence(n: &navi_graph::ExplainNode) -> EvidenceNode {
+    EvidenceNode {
+        id: n.id.clone(),
+        kind: n.kind.to_string(),
+        summary: n.summary.clone(),
+        children: n.children.iter().map(evidence).collect(),
+    }
+}
+
+fn trajectory(g: &SemanticGraph, realm: &Realm, a: &RealmAgent) -> Vec<Waypoint> {
+    let Ok(id) = AgentId::new(a.source_ids[0].clone()) else {
+        return vec![];
+    };
+    let mut out: Vec<Waypoint> = vec![];
+    for seq in g.agent_seqs(&id) {
+        let Some(b) = g.brief(&id, Some(seq)) else {
+            continue;
+        };
+        let location = b.where_.target.as_ref().map(|t| rid(&t.value));
+        let route = match (
+            out.last().and_then(|w| w.location.as_deref()),
+            location.as_deref(),
+        ) {
+            (Some(f), Some(t)) => realm.route(f, t),
+            _ => vec![],
+        };
+        let brief = BriefView {
+            location: location.clone(),
+            location_from_seq: b.where_.target.as_ref().map(|t| t.from_seq),
+            path: b.where_.path.clone(),
+            reason: b.why.reason.clone(),
+            objective: b.why.objective.as_ref().map(|o| o.value.clone()),
+            hypothesis: b.why.hypothesis.as_ref().map(|h| rid(&h.value)),
+            hypothesis_from_seq: b.why.hypothesis.as_ref().map(|h| h.from_seq),
+            claim: b.why.claim.clone(),
+            state_then: b.why.state_then,
+            evidence_then: b.why.evidence_then.iter().map(|o| o.to_string()).collect(),
+            phase: b.what.phase,
+            authority: b.what.authority,
+            action: b.what.action.as_ref().map(rid),
+            action_state_then: b.what.action_state_then,
+            confidence: b
+                .confidence
+                .as_ref()
+                .map(|c| ConfidenceView::from(&c.navi.value)),
+            confidence_from_seq: b.confidence.as_ref().map(|c| c.navi.from_seq),
+            hypothesis_confidence_then: b
+                .confidence
+                .as_ref()
+                .and_then(|c| c.hypothesis_then.as_ref())
+                .map(ConfidenceView::from),
+            next: b.next.declared.as_ref().map(|n| NextView {
+                phase: n.phase,
+                target: n.target.as_ref().map(rid),
+                intent: n.intent.clone(),
+            }),
+            legal_next: b.next.legal.clone(),
+            awaiting_authorisation: b.next.awaiting_authorisation.iter().map(rid).collect(),
+        };
+        out.push(Waypoint {
+            seq,
+            at: b.at,
+            phase: b.what.phase,
+            location,
+            route,
+            brief,
+        });
+    }
+    out
 }

@@ -42,6 +42,27 @@ pub enum AgentPhase {
 }
 
 impl AgentPhase {
+    pub const ALL: [AgentPhase; 10] = [
+        Self::Perceive,
+        Self::Orient,
+        Self::Hypothesise,
+        Self::Investigate,
+        Self::Evaluate,
+        Self::Plan,
+        Self::Authorise,
+        Self::Act,
+        Self::Verify,
+        Self::Learn,
+    ];
+
+    /// Every phase this one may legally move to, in loop order.
+    pub fn successors(self) -> Vec<AgentPhase> {
+        Self::ALL
+            .into_iter()
+            .filter(|p| self.can_transition_to(*p))
+            .collect()
+    }
+
     /// Legal successor phases. The main loop plus the backward edges a real
     /// investigation needs (need more evidence, plan denied, verification
     /// failed). Any phase may return to PERCEIVE (abandon / reset).
@@ -100,6 +121,22 @@ pub struct AgentEvent {
     pub authority: AuthorityLevel,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<ActionId>,
+    /// The standing objective this event serves (§8 "CURRENT OBJECTIVE").
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub objective: Option<String>,
+    /// What the agent declares it will do next (§8 "NEXT"). Declared, never
+    /// inferred: a renderer with no `next` shows "undeclared".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next: Option<NextStep>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NextStep {
+    pub phase: AgentPhase,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<EntityId>,
+    pub intent: String,
 }
 
 #[cfg(test)]
@@ -124,6 +161,13 @@ mod tests {
         for w in order.windows(2) {
             assert!(w[0].can_transition_to(w[1]), "{:?}->{:?}", w[0], w[1]);
         }
+    }
+
+    #[test]
+    fn successors_follow_the_table() {
+        assert_eq!(Plan.successors(), vec![Perceive, Authorise]);
+        assert!(Act.successors().contains(&Verify));
+        assert!(!Act.successors().contains(&Learn));
     }
 
     #[test]

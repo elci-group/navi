@@ -1,5 +1,5 @@
 {
-  "ontology_version": "navi-ontology/0.1",
+  "ontology_version": "navi-ontology/0.2",
   "observations": [
     {
       "id": "obs:org-inv",
@@ -866,7 +866,13 @@
       "phase": "PERCEIVE",
       "reason": "unknown outbound connection to 203.0.113.47:4444",
       "authority": "observe",
-      "target": "ent:api-pod-2"
+      "target": "ent:api-pod-2",
+      "objective": "Explain the unknown outbound connection from api-5d2b-2",
+      "next": {
+        "phase": "ORIENT",
+        "intent": "locate the pod in the estate",
+        "target": "ent:api-pod-2"
+      }
     },
     {
       "agent": "agent:navi-01",
@@ -875,7 +881,13 @@
       "phase": "ORIENT",
       "reason": "pod belongs to api in shop cluster",
       "authority": "query",
-      "target": "ent:api-pod-2"
+      "target": "ent:api-pod-2",
+      "objective": "Explain the unknown outbound connection from api-5d2b-2",
+      "next": {
+        "phase": "HYPOTHESISE",
+        "intent": "classify the outbound connection",
+        "target": "ent:api-pod-2"
+      }
     },
     {
       "agent": "agent:navi-01",
@@ -892,6 +904,12 @@
           "name": "egress-anomaly",
           "version": "0.2"
         }
+      },
+      "objective": "Explain the unknown outbound connection from api-5d2b-2",
+      "next": {
+        "phase": "INVESTIGATE",
+        "intent": "correlate process ancestry and destination",
+        "target": "ent:ext-203"
       }
     },
     {
@@ -909,6 +927,12 @@
           "name": "egress-anomaly",
           "version": "0.2"
         }
+      },
+      "objective": "Explain the unknown outbound connection from api-5d2b-2",
+      "next": {
+        "phase": "EVALUATE",
+        "intent": "weigh the ancestry evidence",
+        "target": "ent:api-pod-2"
       }
     },
     {
@@ -926,6 +950,12 @@
           "name": "egress-anomaly",
           "version": "0.2"
         }
+      },
+      "objective": "Explain the unknown outbound connection from api-5d2b-2",
+      "next": {
+        "phase": "PLAN",
+        "intent": "propose quarantine of api-5d2b-2",
+        "target": "ent:api-pod-2"
       }
     },
     {
@@ -937,7 +967,13 @@
       "authority": "propose",
       "target": "ent:api-pod-2",
       "hypothesis": "hyp:c2",
-      "action": "act:isolate"
+      "action": "act:isolate",
+      "objective": "Explain the unknown outbound connection from api-5d2b-2",
+      "next": {
+        "phase": "AUTHORISE",
+        "intent": "request human approval for network isolation",
+        "target": "ent:api-pod-2"
+      }
     },
     {
       "agent": "agent:navi-01",
@@ -947,7 +983,13 @@
       "reason": "network isolation requires human approval; escalated",
       "authority": "propose",
       "target": "ent:api-pod-2",
-      "action": "act:isolate"
+      "action": "act:isolate",
+      "objective": "Explain the unknown outbound connection from api-5d2b-2",
+      "next": {
+        "phase": "ACT",
+        "intent": "isolate the pod once a human approves",
+        "target": "ent:api-pod-2"
+      }
     }
   ],
   "actions": [

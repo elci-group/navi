@@ -6,6 +6,7 @@
 use crate::contract;
 use crate::grammar::{self, Primitive};
 use crate::ir::*;
+use crate::traversal::Waypoint;
 use navi_ontology::{Gate, ONTOLOGY_VERSION};
 use serde::Serialize;
 use std::collections::{BTreeMap, BTreeSet};
@@ -29,6 +30,10 @@ pub enum RealmViolationCode {
     /// §10 UI affordance exceeds actual authority.
     AuthorityOverreach,
     ContainmentCycle,
+    /// §5: an object without a reverse-resolution chain to observations.
+    MissingEvidence,
+    /// §13/§22: Navi's movement or waypoint state disagrees with the realm.
+    TrajectoryViolation,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -406,7 +411,144 @@ impl Realm {
             }
         }
 
+        self.check_evidence(&mut out);
+        self.check_trajectories(&mut out);
+
         out.0.sort();
         out.0
+    }
+}
+
+impl Realm {
+    fn check_evidence(&self, out: &mut Out) {
+        use RealmViolationCode as C;
+        let mut trees: BTreeMap<&str, &EvidenceNode> = BTreeMap::new();
+        for e in &self.evidence {
+            if trees.insert(&e.realm_id, &e.tree).is_some() {
+                out.push(C::DuplicateId, &e.realm_id, "more than one evidence chain");
+            }
+        }
+        let objects = self
+            .entities
+            .iter()
+            .map(|x| (&x.realm_id, &x.source_ids))
+            .chain(self.edges.iter().map(|x| (&x.realm_id, &x.source_ids)))
+            .chain(self.controls.iter().map(|x| (&x.realm_id, &x.source_ids)))
+            .chain(self.hazards.iter().map(|x| (&x.realm_id, &x.source_ids)));
+        let mut wanted = BTreeSet::new();
+        for (id, sources) in objects {
+            wanted.insert(id.as_str());
+            match trees.get(id.as_str()) {
+                None => out.push(C::MissingEvidence, id, "no evidence chain"),
+                Some(t) => {
+                    if sources.first() != Some(&t.id) {
+                        out.push(
+                            C::MissingEvidence,
+                            id,
+                            format!(
+                                "evidence chain is rooted at {}, not at the primary source",
+                                t.id
+                            ),
+                        );
+                    }
+                    if t.observation_leaves() == 0 {
+                        out.push(
+                            C::MissingEvidence,
+                            id,
+                            "evidence chain never reaches a raw observation",
+                        );
+                    }
+                }
+            }
+        }
+        for id in trees.keys() {
+            if !wanted.contains(id) {
+                out.push(
+                    C::DanglingReference,
+                    id,
+                    "evidence for an object that is not in the realm",
+                );
+            }
+        }
+    }
+
+    fn check_trajectories(&self, out: &mut Out) {
+        use RealmViolationCode as C;
+        let places: BTreeSet<&str> = self.entities.iter().map(|e| e.realm_id.as_str()).collect();
+        let hazards: BTreeSet<&str> = self.hazards.iter().map(|h| h.realm_id.as_str()).collect();
+        for a in &self.agents {
+            let actions: BTreeSet<&str> = a.actions.iter().map(|x| x.realm_id.as_str()).collect();
+            let mut prev: Option<&Waypoint> = None;
+            for w in &a.trajectory {
+                let subj = format!("{}#{}", a.realm_id, w.seq);
+                let mut bad = |m: String| out.push(C::TrajectoryViolation, &subj, m);
+                let b = &w.brief;
+                if let Some(p) = prev {
+                    if w.seq <= p.seq || w.at < p.at {
+                        bad("waypoints out of order".into());
+                    }
+                    if !p.phase.can_transition_to(w.phase) {
+                        bad(format!("illegal phase walk {:?} -> {:?}", p.phase, w.phase));
+                    }
+                }
+                if b.phase != w.phase || b.location != w.location {
+                    bad("brief disagrees with its waypoint".into());
+                }
+                if b.legal_next != w.phase.successors() {
+                    bad("legal next phases are not the agent loop's".into());
+                }
+                if let Some(n) = &b.next {
+                    if !w.phase.can_transition_to(n.phase) {
+                        bad(format!(
+                            "declared next {:?} is not a legal successor",
+                            n.phase
+                        ));
+                    }
+                    if n.target.as_deref().is_some_and(|t| !places.contains(t)) {
+                        bad("declared next target is not in the realm".into());
+                    }
+                }
+                if w.location.as_deref().is_some_and(|l| !places.contains(l)) {
+                    bad("location is not in the realm".into());
+                }
+                if b.hypothesis
+                    .as_deref()
+                    .is_some_and(|h| !hazards.contains(h))
+                {
+                    bad("hypothesis is not a realm hazard".into());
+                }
+                for x in b.action.iter().chain(&b.awaiting_authorisation) {
+                    if !actions.contains(x.as_str()) {
+                        bad(format!("{x} is not one of this agent's actions"));
+                    }
+                }
+                for c in b.confidence.iter().chain(&b.hypothesis_confidence_then) {
+                    if c.percent != ConfidenceView::percent_label(c.basis_points) {
+                        bad("confidence label inconsistent".into());
+                    }
+                }
+                // Movement must follow the realm: recompute the route.
+                let want = match (
+                    prev.and_then(|p| p.location.as_deref()),
+                    w.location.as_deref(),
+                ) {
+                    (Some(f), Some(t)) => self.route(f, t),
+                    _ => vec![],
+                };
+                if w.route != want {
+                    bad("route is not the realm's route between these places".into());
+                }
+                prev = Some(w);
+            }
+            if let Some(last) = a.trajectory.last() {
+                if last.phase != a.phase || last.location != a.location || last.at != a.at {
+                    out.push(
+                        C::TrajectoryViolation,
+                        &a.realm_id,
+                        "current state is not the trajectory's last waypoint",
+                    );
+                }
+            }
+        }
     }
 }

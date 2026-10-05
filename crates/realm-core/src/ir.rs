@@ -33,6 +33,38 @@ pub struct Realm {
     pub controls: Vec<RealmControl>,
     pub hazards: Vec<RealmHazard>,
     pub agents: Vec<RealmAgent>,
+    /// Reverse resolution (§5): for every entity, edge, control and hazard,
+    /// the chain down to raw observations, so selecting it can show why it
+    /// exists.
+    pub evidence: Vec<Evidence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Evidence {
+    pub realm_id: String,
+    pub tree: EvidenceNode,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EvidenceNode {
+    pub id: String,
+    pub kind: String,
+    pub summary: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<EvidenceNode>,
+}
+
+impl EvidenceNode {
+    pub fn observation_leaves(&self) -> usize {
+        usize::from(self.kind == "observation")
+            + self
+                .children
+                .iter()
+                .map(EvidenceNode::observation_leaves)
+                .sum::<usize>()
+    }
 }
 
 /// Confidence as the realm shows it: exact, with its estimator (§6: 0.51
@@ -191,6 +223,8 @@ pub struct RealmAgent {
     pub authority: AuthorityLevel,
     pub loadout: Vec<LoadoutSlot>,
     pub actions: Vec<ActionView>,
+    /// Every agent event in order: where attention went and why (§25 Phase 2).
+    pub trajectory: Vec<crate::Waypoint>,
     pub visual_contract: VisualContract,
 }
 

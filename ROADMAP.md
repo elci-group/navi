@@ -10,8 +10,10 @@ the next one starts.
       grammar §3, RIR §4, renderer-side validator §19), `realm-compiler`,
       `realm-layout`, `realm-render` (text + SVG), `realm-cli`. Scenario:
       one repository + one runtime environment.
-- [ ] **Phase 2 — Navi traversal.** Agent attention drives movement;
-      selecting Navi explains where/why/what/confidence/next (§8 HUD).
+- [x] **Phase 2 — Navi traversal.** Ontology 0.2 (declared `objective` /
+      `next`), headless `navi brief`, validated attention routes over realm
+      topology, evidence chains in the realm, `realm trace`, interactive
+      HTML timeline.
 - [ ] **Phase 3 — replay.** Event-sourced log, snapshot + ordered deltas,
       LIVE/PAUSE/STEP/REWIND/REPLAY/COMPARE/FORK (§15, §16, §22).
 - [ ] **Phase 4 — intervention.** Sandboxed block/isolate/revoke/rollback

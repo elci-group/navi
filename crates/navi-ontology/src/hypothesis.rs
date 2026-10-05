@@ -69,6 +69,40 @@ impl Hypothesis {
         self.transitions.last().map_or(self.opened_as, |t| t.to)
     }
 
+    /// State as of instant `t`, or `None` if the hypothesis did not yet
+    /// exist. Lets a replayed event show what was believed *then*.
+    pub fn state_at(&self, t: Timestamp) -> Option<EpistemicState> {
+        (t >= self.opened_at).then(|| {
+            self.transitions
+                .iter()
+                .take_while(|x| x.at <= t)
+                .last()
+                .map_or(self.opened_as, |x| x.to)
+        })
+    }
+
+    pub fn confidence_at(&self, t: Timestamp) -> Option<&Confidence> {
+        (t >= self.opened_at).then(|| {
+            self.transitions
+                .iter()
+                .take_while(|x| x.at <= t)
+                .last()
+                .map_or(&self.initial_confidence, |x| &x.confidence)
+        })
+    }
+
+    /// Evidence held as of instant `t` (empty before the hypothesis existed).
+    pub fn evidence_at(&self, t: Timestamp) -> Option<Provenance> {
+        (t >= self.opened_at).then(|| {
+            self.transitions
+                .iter()
+                .take_while(|x| x.at <= t)
+                .fold(self.initial_evidence.clone(), |acc, x| {
+                    acc.union(&x.evidence)
+                })
+        })
+    }
+
     pub fn confidence(&self) -> &Confidence {
         self.transitions
             .last()
@@ -233,6 +267,18 @@ mod tests {
         assert_eq!(h.state(), Probable);
         assert_eq!(h.evidence().sources().len(), 3);
         h.check(&p).unwrap();
+    }
+
+    #[test]
+    fn state_at_replays_history() {
+        let p = EpistemicPolicy::default();
+        let mut h = hyp();
+        h.transition(step(10, Anomalous, Suspicious, 0.5, "b"), &p)
+            .unwrap();
+        assert_eq!(h.state_at(Timestamp(-1)), None);
+        assert_eq!(h.state_at(Timestamp(5)), Some(Anomalous));
+        assert_eq!(h.state_at(Timestamp(10)), Some(Suspicious));
+        assert_eq!(h.confidence_at(Timestamp(5)).unwrap().basis_points(), 4000);
     }
 
     #[test]

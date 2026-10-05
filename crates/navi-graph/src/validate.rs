@@ -591,6 +591,34 @@ impl SemanticGraph {
             if let Some(a) = &e.action {
                 referenced.entry(a).or_default().insert(e.phase);
             }
+            if e.objective.as_ref().is_some_and(|o| o.trim().is_empty()) {
+                push(
+                    subj.clone(),
+                    "objective, if declared, must not be empty".into(),
+                );
+            }
+            if let Some(n) = &e.next {
+                if !e.phase.can_transition_to(n.phase) {
+                    push(
+                        subj.clone(),
+                        format!(
+                            "declared next phase {:?} is not a legal successor of {:?}",
+                            n.phase, e.phase
+                        ),
+                    );
+                }
+                if n.intent.trim().is_empty() {
+                    push(subj.clone(), "declared next step needs an intent".into());
+                }
+                if let Some(t) = &n.target {
+                    if !self.entities.contains_key(t) {
+                        push(
+                            subj.clone(),
+                            format!("declared next target {t} does not exist"),
+                        );
+                    }
+                }
+            }
         }
 
         // §19: action without agent event.

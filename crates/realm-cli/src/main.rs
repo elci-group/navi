@@ -6,6 +6,21 @@ use realm_core::{Primitive, Realm, GRAMMAR_VERSION};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+/// Stdout that tolerates a closed pipe (`navi … | head`): a reader going
+/// away is not an error worth panicking over.
+macro_rules! out {
+    ($($t:tt)*) => {{
+        use std::io::Write as _;
+        let _ = write!(std::io::stdout().lock(), $($t)*);
+    }};
+}
+macro_rules! outln {
+    ($($t:tt)*) => {{
+        use std::io::Write as _;
+        let _ = writeln!(std::io::stdout().lock(), $($t)*);
+    }};
+}
+
 #[derive(Parser)]
 #[command(
     name = "realm",
@@ -21,6 +36,7 @@ struct Cli {
 enum Format {
     Text,
     Svg,
+    Html,
     Json,
 }
 
@@ -42,6 +58,8 @@ enum Command {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+    /// Navi's trajectory: each event, the route attention took, and the brief.
+    Trace { file: PathBuf },
     /// Print the realm grammar (§3).
     Grammar,
 }
@@ -81,7 +99,7 @@ fn emit(output: Option<PathBuf>, content: &str) -> ExitCode {
             Err(e) => fail(format!("{}: {e}", p.display())),
         },
         None => {
-            print!("{content}");
+            out!("{content}");
             ExitCode::SUCCESS
         }
     }
@@ -100,7 +118,7 @@ fn main() -> ExitCode {
             Ok(r) => {
                 let v = r.validate();
                 if v.is_empty() {
-                    println!(
+                    outln!(
                         "ok  {} ({}, {} entities, {} edges, {} hazards)",
                         file.display(),
                         r.grammar_version,
@@ -131,6 +149,7 @@ fn main() -> ExitCode {
             let out = match format {
                 Format::Text => realm_render::text(&realm),
                 Format::Svg => realm_render::svg(&realm),
+                Format::Html => realm_render::html(&realm),
                 Format::Json => {
                     let l = realm_layout::layout(&realm);
                     match realm.validate().is_empty() {
@@ -144,10 +163,17 @@ fn main() -> ExitCode {
                 Err(e) => fail(e),
             }
         }
+        Command::Trace { file } => match load(&file) {
+            Ok(r) => match realm_render::trace(&r) {
+                Ok(s) => emit(None, &s),
+                Err(e) => fail(e),
+            },
+            Err(e) => fail(e),
+        },
         Command::Grammar => {
-            println!("{GRAMMAR_VERSION}");
+            outln!("{GRAMMAR_VERSION}");
             for p in Primitive::ALL {
-                println!(
+                outln!(
                     "  {} {:<15} {}",
                     realm_core::contract::glyph(p),
                     realm_core::wire(&p),

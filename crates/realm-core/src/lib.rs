@@ -11,11 +11,13 @@
 pub mod contract;
 pub mod grammar;
 mod ir;
+mod traversal;
 mod validate;
 
 pub use contract::{Badge, Line, Token, VisualContract};
 pub use grammar::{EpistemicView, Primitive, GRAMMAR_VERSION};
 pub use ir::*;
+pub use traversal::{BriefView, Movement, NextView, RouteStep, Waypoint};
 pub use validate::{RealmViolation, RealmViolationCode};
 
 /// The canonical wire name of an ontology enum value (e.g. `PROBABLE`).

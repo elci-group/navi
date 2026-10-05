@@ -3,10 +3,11 @@
 //! fails [`realm_core::Realm::validate`].
 
 mod common;
+mod html;
 mod svg;
 mod text;
 
-pub use common::{hazard_mark, hud_lines, markers};
+pub use common::{brief_lines, hazard_mark, hud_lines, markers, step_label};
 use realm_core::{Realm, RealmViolation};
 
 #[derive(Debug)]
@@ -44,4 +45,19 @@ pub fn text(realm: &Realm) -> Result<String, Refused> {
 pub fn svg(realm: &Realm) -> Result<String, Refused> {
     gate(realm)?;
     Ok(svg::render(realm, &realm_layout::layout(realm)))
+}
+
+/// Navi's trajectory as text: every waypoint, the route taken to reach it,
+/// and the brief (where / why / what / confidence / next) at that moment.
+pub fn trace(realm: &Realm) -> Result<String, Refused> {
+    gate(realm)?;
+    Ok(text::trace(realm))
+}
+
+/// Interactive HTML: the SVG realm plus a timeline that moves Navi along its
+/// validated routes, and a panel that explains whatever is selected. The
+/// page only displays precomputed realm data; it contains no security logic.
+pub fn html(realm: &Realm) -> Result<String, Refused> {
+    gate(realm)?;
+    Ok(html::render(realm, &realm_layout::layout(realm)))
 }
