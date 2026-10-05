@@ -3,11 +3,13 @@
 //! fails [`realm_core::Realm::validate`].
 
 mod common;
+mod dvr;
 mod html;
 mod svg;
 mod text;
 
 pub use common::{brief_lines, hazard_mark, hud_lines, markers, step_label};
+pub use dvr::DvrFrame;
 use realm_core::{Realm, RealmViolation};
 
 #[derive(Debug)]
@@ -60,4 +62,9 @@ pub fn trace(realm: &Realm) -> Result<String, Refused> {
 pub fn html(realm: &Realm) -> Result<String, Refused> {
     gate(realm)?;
     Ok(html::render(realm, &realm_layout::layout(realm)))
+}
+
+/// The security DVR page for a sequence of frames (see `realm-replay`).
+pub fn dvr(frames: &[DvrFrame]) -> Result<String, Refused> {
+    dvr::render(frames)
 }

@@ -1,0 +1,165 @@
+{
+  "label": "human approves quarantine at t+5200ms",
+  "at": 4900,
+  "events": [
+    {
+      "at": 5200,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "authorise",
+          "at": 5200,
+          "approval": {
+            "id": "appr:cf-isolate",
+            "kind": {
+              "human": {
+                "principal": "oncall (hypothetical)"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "at": 5300,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "begin_execution",
+          "at": 5300
+        }
+      }
+    },
+    {
+      "at": 5300,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 8,
+          "at": 5300,
+          "phase": "ACT",
+          "reason": "apply quarantine network policy",
+          "authority": "network_isolation",
+          "target": "ent:api-pod-2",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "action": "act:isolate",
+          "next": {
+            "phase": "VERIFY",
+            "target": "ent:api-pod-2",
+            "intent": "confirm no egress from the pod"
+          }
+        }
+      }
+    },
+    {
+      "at": 5600,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "execution_returned",
+          "at": 5600,
+          "receipt": "networkpolicy quarantine-api-5d2b-2 applied",
+          "ok": true
+        }
+      }
+    },
+    {
+      "at": 6500,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:cf-egress-denied",
+          "source": {
+            "system": "hypothetical/netflow",
+            "collector": "operator-fork"
+          },
+          "observed_at": 6500,
+          "subject": "ent:api-pod-2",
+          "kind": "net.outbound_denied",
+          "attributes": {
+            "dst": "203.0.113.47",
+            "dport": 4444
+          }
+        }
+      }
+    },
+    {
+      "at": 6600,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "observe_effect",
+          "at": 6600,
+          "effect": [
+            {
+              "observation": "obs:cf-egress-denied"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "at": 7000,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:cf-no-egress-window",
+          "source": {
+            "system": "hypothetical/netflow",
+            "collector": "operator-fork"
+          },
+          "observed_at": 7000,
+          "subject": "ent:api-pod-2",
+          "kind": "net.no_egress_window",
+          "attributes": {
+            "window_s": 300
+          }
+        }
+      }
+    },
+    {
+      "at": 7000,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 9,
+          "at": 7000,
+          "phase": "VERIFY",
+          "reason": "check the pod stays without egress",
+          "authority": "query",
+          "target": "ent:api-pod-2",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "action": "act:isolate",
+          "next": {
+            "phase": "LEARN",
+            "intent": "record the outcome"
+          }
+        }
+      }
+    },
+    {
+      "at": 7100,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "verify",
+          "at": 7100,
+          "method": "no egress from pod to destination for 5 minutes",
+          "evidence": [
+            {
+              "observation": "obs:cf-no-egress-window"
+            }
+          ],
+          "passed": true
+        }
+      }
+    }
+  ]
+}

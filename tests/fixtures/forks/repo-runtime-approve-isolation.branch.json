@@ -1,0 +1,1707 @@
+{
+  "log_version": "navi-log/0.1",
+  "ontology_version": "navi-ontology/0.2",
+  "branch": {
+    "fork_of": "sha256:ce9924c2763f6ed458eb5d8f1c77ad24e97907b69bcbe87d43dfa5d32dad594f",
+    "at": 4900,
+    "label": "human approves quarantine at t+5200ms"
+  },
+  "events": [
+    {
+      "seq": 1,
+      "at": 0,
+      "event": {
+        "type": "authority_policy_set",
+        "policy": {
+          "version": "production-default/1",
+          "gates": {
+            "observe": "autonomous",
+            "query": "autonomous",
+            "correlate": "autonomous",
+            "simulate": "autonomous",
+            "propose": "autonomous",
+            "temporary_containment": "policy_dependent",
+            "credential_revocation": "human_approval",
+            "network_isolation": "human_approval",
+            "destructive_remediation": "human_approval",
+            "permanent_policy_change": "human_approval"
+          }
+        }
+      }
+    },
+    {
+      "seq": 2,
+      "at": 0,
+      "event": {
+        "type": "epistemic_policy_set",
+        "policy": {
+          "version": "default/1",
+          "probable_min_bp": 6000,
+          "confirmed_min_bp": 9000
+        }
+      }
+    },
+    {
+      "seq": 3,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:admission-cfg",
+          "source": {
+            "system": "k8s-api",
+            "collector": "kube-state/prod-eu-1"
+          },
+          "observed_at": 0,
+          "subject": "ent:shop",
+          "kind": "admission.config",
+          "attributes": {
+            "enforcement_observed": false,
+            "webhook": "policy-gate"
+          }
+        }
+      }
+    },
+    {
+      "seq": 4,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:branch-prot",
+          "source": {
+            "system": "github",
+            "collector": "gh-app/elci"
+          },
+          "observed_at": 0,
+          "subject": "ent:branch-main",
+          "kind": "branch_protection.config",
+          "attributes": {
+            "required_reviews": 1
+          }
+        }
+      }
+    },
+    {
+      "seq": 5,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:ci-inv",
+          "source": {
+            "system": "github-actions",
+            "collector": "gh-app/elci"
+          },
+          "observed_at": 0,
+          "kind": "workflow.snapshot",
+          "attributes": {
+            "workflow": "release.yml"
+          }
+        }
+      }
+    },
+    {
+      "seq": 6,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:db-auth-cfg",
+          "source": {
+            "system": "postgres",
+            "collector": "pg-exporter/orders"
+          },
+          "observed_at": 0,
+          "subject": "ent:orders-db",
+          "kind": "auth.config",
+          "attributes": {
+            "method": "scram-sha-256"
+          }
+        }
+      }
+    },
+    {
+      "seq": 7,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:gh-inv",
+          "source": {
+            "system": "github",
+            "collector": "gh-app/elci"
+          },
+          "observed_at": 0,
+          "kind": "repository.snapshot",
+          "attributes": {
+            "default_branch": "main",
+            "repo": "elci/shop"
+          }
+        }
+      }
+    },
+    {
+      "seq": 8,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:k8s-inv",
+          "source": {
+            "system": "k8s-api",
+            "collector": "kube-state/prod-eu-1"
+          },
+          "observed_at": 0,
+          "kind": "topology.snapshot",
+          "attributes": {
+            "namespace": "shop"
+          }
+        }
+      }
+    },
+    {
+      "seq": 9,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:netpol-cfg",
+          "source": {
+            "system": "k8s-api",
+            "collector": "kube-state/prod-eu-1"
+          },
+          "observed_at": 0,
+          "subject": "ent:api",
+          "kind": "networkpolicy.config",
+          "attributes": {
+            "enforcing": true,
+            "policy": "api-ingress-only"
+          }
+        }
+      }
+    },
+    {
+      "seq": 10,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:org-inv",
+          "source": {
+            "system": "cmdb",
+            "collector": "cmdb-sync/1"
+          },
+          "observed_at": 0,
+          "kind": "inventory.snapshot",
+          "attributes": {
+            "organisation": "elci"
+          }
+        }
+      }
+    },
+    {
+      "seq": 11,
+      "at": 0,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:pod-web-1",
+          "source": {
+            "system": "k8s-api",
+            "collector": "kube-state/prod-eu-1"
+          },
+          "observed_at": 0,
+          "subject": "ent:web-pod-1",
+          "kind": "pod.status",
+          "attributes": {
+            "phase": "Running"
+          }
+        }
+      }
+    },
+    {
+      "seq": 12,
+      "at": 0,
+      "event": {
+        "type": "capability_granted",
+        "capability": {
+          "id": "cap:isolate",
+          "kind": "ISOLATE",
+          "scope": [
+            "ent:shop"
+          ],
+          "target_classes": [
+            "container"
+          ],
+          "authority": "network_isolation",
+          "risk_class": "high",
+          "approval_requirement": "human_approval",
+          "rollback_method": {
+            "method": "delete quarantine network policy"
+          },
+          "verification_method": "no egress from pod to destination for 5 minutes",
+          "expiry": "never"
+        }
+      }
+    },
+    {
+      "seq": 13,
+      "at": 0,
+      "event": {
+        "type": "capability_granted",
+        "capability": {
+          "id": "cap:scan",
+          "kind": "SCAN",
+          "scope": [
+            "ent:org"
+          ],
+          "target_classes": [
+            "service",
+            "container",
+            "endpoint",
+            "data_store",
+            "external_actor",
+            "repository",
+            "branch"
+          ],
+          "authority": "query",
+          "risk_class": "low",
+          "approval_requirement": "autonomous",
+          "rollback_method": "not_applicable",
+          "verification_method": "query returned a result set",
+          "expiry": "never"
+        }
+      }
+    },
+    {
+      "seq": 14,
+      "at": 0,
+      "event": {
+        "type": "capability_granted",
+        "capability": {
+          "id": "cap:trace",
+          "kind": "TRACE",
+          "scope": [
+            "ent:org"
+          ],
+          "target_classes": [
+            "container",
+            "process",
+            "external_actor"
+          ],
+          "authority": "correlate",
+          "risk_class": "low",
+          "approval_requirement": "autonomous",
+          "rollback_method": "not_applicable",
+          "verification_method": "causal path reconstructed",
+          "expiry": "never"
+        }
+      }
+    },
+    {
+      "seq": 15,
+      "at": 0,
+      "event": {
+        "type": "agent_registered",
+        "agent": {
+          "id": "agent:navi-01",
+          "name": "LC-DEFENCE-01",
+          "role": "hunter",
+          "loadout": [
+            "cap:scan",
+            "cap:trace",
+            "cap:isolate"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 16,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:api",
+          "class": "service",
+          "name": "api",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 17,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:api-pod-1",
+          "class": "container",
+          "name": "api-5d2b-1",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 18,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:api-pod-2",
+          "class": "container",
+          "name": "api-5d2b-2",
+          "trust": "unverified",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 19,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:artifact",
+          "class": "artifact",
+          "name": "shop-api:1.42.0",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 20,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:branch-main",
+          "class": "branch",
+          "name": "main",
+          "trust": "unverified",
+          "provenance": [
+            {
+              "observation": "obs:gh-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 21,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:ci",
+          "class": "pipeline",
+          "name": "release.yml",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 22,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:delivery",
+          "class": "environment",
+          "name": "delivery",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            },
+            {
+              "observation": "obs:gh-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 23,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:ingress",
+          "class": "endpoint",
+          "name": "shop-ingress",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 24,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:orders-db",
+          "class": "data_store",
+          "name": "orders-db",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:db-auth-cfg"
+            },
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 25,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:org",
+          "class": "organisation",
+          "name": "elci",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:org-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 26,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:prod",
+          "class": "environment",
+          "name": "prod",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 27,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:registry",
+          "class": "registry",
+          "name": "ghcr.io/elci",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 28,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:repo",
+          "class": "repository",
+          "name": "elci/shop",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:gh-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 29,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:shop",
+          "class": "cluster",
+          "name": "shop",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 30,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:web",
+          "class": "service",
+          "name": "web",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ],
+          "observed_at": 0
+        }
+      }
+    },
+    {
+      "seq": 31,
+      "at": 0,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:web-pod-1",
+          "class": "container",
+          "name": "web-7f9c-1",
+          "trust": "trusted",
+          "provenance": [
+            {
+              "observation": "obs:pod-web-1"
+            }
+          ],
+          "observed_at": 0,
+          "valid_until": 2500
+        }
+      }
+    },
+    {
+      "seq": 32,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:api-db",
+          "kind": "depends_on",
+          "from": "ent:api",
+          "to": "ent:orders-db",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 33,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:api-db-auth",
+          "kind": "authenticates_to",
+          "from": "ent:api",
+          "to": "ent:orders-db",
+          "provenance": [
+            {
+              "observation": "obs:db-auth-cfg"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 34,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:api-has-api-pod-1",
+          "kind": "contains",
+          "from": "ent:api",
+          "to": "ent:api-pod-1",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 35,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:api-has-api-pod-2",
+          "kind": "contains",
+          "from": "ent:api",
+          "to": "ent:api-pod-2",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 36,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:artifact-deploys",
+          "kind": "deploys_to",
+          "from": "ent:artifact",
+          "to": "ent:api",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            },
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 37,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:ci-builds-repo",
+          "kind": "builds_from",
+          "from": "ent:ci",
+          "to": "ent:repo",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 38,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:ci-has-artifact",
+          "kind": "contains",
+          "from": "ent:ci",
+          "to": "ent:artifact",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 39,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:ci-produces",
+          "kind": "produces",
+          "from": "ent:ci",
+          "to": "ent:artifact",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 40,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:delivery-has-ci",
+          "kind": "contains",
+          "from": "ent:delivery",
+          "to": "ent:ci",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 41,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:delivery-has-registry",
+          "kind": "contains",
+          "from": "ent:delivery",
+          "to": "ent:registry",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 42,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:delivery-has-repo",
+          "kind": "contains",
+          "from": "ent:delivery",
+          "to": "ent:repo",
+          "provenance": [
+            {
+              "observation": "obs:gh-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 43,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:ingress-web",
+          "kind": "communicates_with",
+          "from": "ent:ingress",
+          "to": "ent:web",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 44,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:org-has-delivery",
+          "kind": "contains",
+          "from": "ent:org",
+          "to": "ent:delivery",
+          "provenance": [
+            {
+              "observation": "obs:org-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 45,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:org-has-prod",
+          "kind": "contains",
+          "from": "ent:org",
+          "to": "ent:prod",
+          "provenance": [
+            {
+              "observation": "obs:org-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 46,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:prod-has-shop",
+          "kind": "contains",
+          "from": "ent:prod",
+          "to": "ent:shop",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 47,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:registry-stores",
+          "kind": "stores",
+          "from": "ent:registry",
+          "to": "ent:artifact",
+          "provenance": [
+            {
+              "observation": "obs:ci-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 48,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:repo-has-branch-main",
+          "kind": "contains",
+          "from": "ent:repo",
+          "to": "ent:branch-main",
+          "provenance": [
+            {
+              "observation": "obs:gh-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 49,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:shop-has-api",
+          "kind": "contains",
+          "from": "ent:shop",
+          "to": "ent:api",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 50,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:shop-has-ingress",
+          "kind": "contains",
+          "from": "ent:shop",
+          "to": "ent:ingress",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 51,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:shop-has-orders-db",
+          "kind": "contains",
+          "from": "ent:shop",
+          "to": "ent:orders-db",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 52,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:shop-has-web",
+          "kind": "contains",
+          "from": "ent:shop",
+          "to": "ent:web",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 53,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:web-api",
+          "kind": "communicates_with",
+          "from": "ent:web",
+          "to": "ent:api",
+          "provenance": [
+            {
+              "observation": "obs:k8s-inv"
+            },
+            {
+              "observation": "obs:netpol-cfg"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 54,
+      "at": 0,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:web-has-web-pod-1",
+          "kind": "contains",
+          "from": "ent:web",
+          "to": "ent:web-pod-1",
+          "provenance": [
+            {
+              "observation": "obs:pod-web-1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 55,
+      "at": 0,
+      "event": {
+        "type": "safeguard_asserted",
+        "safeguard": {
+          "id": "sg:admission",
+          "kind": "admission_control",
+          "name": "policy-gate",
+          "protects": [
+            "ent:shop"
+          ],
+          "status": "unknown",
+          "provenance": [
+            {
+              "observation": "obs:admission-cfg"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 56,
+      "at": 0,
+      "event": {
+        "type": "safeguard_asserted",
+        "safeguard": {
+          "id": "sg:branch-protection",
+          "kind": "branch_protection",
+          "name": "main protection",
+          "protects": [
+            "ent:branch-main"
+          ],
+          "status": "active",
+          "provenance": [
+            {
+              "observation": "obs:branch-prot"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 57,
+      "at": 0,
+      "event": {
+        "type": "safeguard_asserted",
+        "safeguard": {
+          "id": "sg:db-auth",
+          "kind": "authentication",
+          "name": "scram auth",
+          "protects": [
+            "ent:orders-db"
+          ],
+          "status": "active",
+          "provenance": [
+            {
+              "observation": "obs:db-auth-cfg"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 58,
+      "at": 0,
+      "event": {
+        "type": "safeguard_asserted",
+        "safeguard": {
+          "id": "sg:netpol",
+          "kind": "network_policy",
+          "name": "api-ingress-only",
+          "protects": [
+            "ent:api"
+          ],
+          "status": "active",
+          "provenance": [
+            {
+              "observation": "obs:netpol-cfg"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 59,
+      "at": 2000,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:dep-change",
+          "source": {
+            "system": "github",
+            "collector": "gh-app/elci"
+          },
+          "observed_at": 2000,
+          "subject": "ent:branch-main",
+          "kind": "git.lockfile_changed",
+          "attributes": {
+            "file": "Cargo.lock",
+            "via_pr": false
+          },
+          "raw_ref": "git://elci/shop@4c1e9a2"
+        }
+      }
+    },
+    {
+      "seq": 60,
+      "at": 2100,
+      "event": {
+        "type": "hypothesis_opened",
+        "hypothesis": {
+          "id": "hyp:dep-drift",
+          "subjects": [
+            "ent:branch-main"
+          ],
+          "claim": "unreviewed_dependency_change",
+          "opened_at": 2100,
+          "opened_as": "UNEXPLAINED",
+          "initial_confidence": {
+            "value": 0.2,
+            "estimator": {
+              "name": "supply-chain-drift",
+              "version": "0.1"
+            }
+          },
+          "initial_evidence": [
+            {
+              "observation": "obs:dep-change"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 61,
+      "at": 3000,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:egress-1",
+          "source": {
+            "system": "netflow",
+            "collector": "vpc-flowlogs/prod-eu-1"
+          },
+          "observed_at": 3000,
+          "subject": "ent:api-pod-2",
+          "kind": "net.outbound_connection",
+          "attributes": {
+            "bytes_out": 48211,
+            "dport": 4444,
+            "dst": "203.0.113.47"
+          },
+          "raw_ref": "s3://flowlogs/prod-eu-1/2026/10/05/12/43.gz#L8812"
+        }
+      }
+    },
+    {
+      "seq": 62,
+      "at": 3000,
+      "event": {
+        "type": "entity_asserted",
+        "entity": {
+          "id": "ent:ext-203",
+          "class": "external_actor",
+          "name": "203.0.113.47",
+          "trust": "unknown",
+          "provenance": [
+            {
+              "observation": "obs:egress-1"
+            }
+          ],
+          "observed_at": 3000
+        }
+      }
+    },
+    {
+      "seq": 63,
+      "at": 3000,
+      "event": {
+        "type": "relationship_asserted",
+        "relationship": {
+          "id": "rel:pod2-egress",
+          "kind": "communicates_with",
+          "from": "ent:api-pod-2",
+          "to": "ent:ext-203",
+          "provenance": [
+            {
+              "observation": "obs:egress-1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 64,
+      "at": 3000,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 1,
+          "at": 3000,
+          "phase": "PERCEIVE",
+          "target": "ent:api-pod-2",
+          "reason": "unknown outbound connection to 203.0.113.47:4444",
+          "authority": "observe",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "ORIENT",
+            "target": "ent:api-pod-2",
+            "intent": "locate the pod in the estate"
+          }
+        }
+      }
+    },
+    {
+      "seq": 65,
+      "at": 3100,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 2,
+          "at": 3100,
+          "phase": "ORIENT",
+          "target": "ent:api-pod-2",
+          "reason": "pod belongs to api in shop cluster",
+          "authority": "query",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "HYPOTHESISE",
+            "target": "ent:api-pod-2",
+            "intent": "classify the outbound connection"
+          }
+        }
+      }
+    },
+    {
+      "seq": 66,
+      "at": 3200,
+      "event": {
+        "type": "hypothesis_opened",
+        "hypothesis": {
+          "id": "hyp:c2",
+          "subjects": [
+            "ent:api-pod-2",
+            "ent:ext-203"
+          ],
+          "claim": "c2_beacon",
+          "attack": [
+            "TA0011"
+          ],
+          "opened_at": 3200,
+          "opened_as": "ANOMALOUS",
+          "initial_confidence": {
+            "value": 0.35,
+            "estimator": {
+              "name": "egress-anomaly",
+              "version": "0.2"
+            }
+          },
+          "initial_evidence": [
+            {
+              "observation": "obs:egress-1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 67,
+      "at": 3200,
+      "event": {
+        "type": "threat_attributed",
+        "threat": {
+          "id": "thr:c2",
+          "hypothesis": "hyp:c2",
+          "targets": [
+            "ent:api-pod-2"
+          ]
+        }
+      }
+    },
+    {
+      "seq": 68,
+      "at": 3200,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 3,
+          "at": 3200,
+          "phase": "HYPOTHESISE",
+          "target": "ent:api-pod-2",
+          "reason": "outbound to rare port from app pod",
+          "hypothesis": "hyp:c2",
+          "confidence": {
+            "value": 0.35,
+            "estimator": {
+              "name": "egress-anomaly",
+              "version": "0.2"
+            }
+          },
+          "authority": "correlate",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "INVESTIGATE",
+            "target": "ent:ext-203",
+            "intent": "correlate process ancestry and destination"
+          }
+        }
+      }
+    },
+    {
+      "seq": 69,
+      "at": 3900,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:proc-ancestry",
+          "source": {
+            "system": "falco",
+            "collector": "falco/prod-eu-1"
+          },
+          "observed_at": 3900,
+          "subject": "ent:api-pod-2",
+          "kind": "process.ancestry",
+          "attributes": {
+            "chain": [
+              "java",
+              "sh",
+              "curl"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "seq": 70,
+      "at": 3900,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 4,
+          "at": 3900,
+          "phase": "INVESTIGATE",
+          "target": "ent:ext-203",
+          "reason": "correlate process ancestry",
+          "hypothesis": "hyp:c2",
+          "confidence": {
+            "value": 0.55,
+            "estimator": {
+              "name": "egress-anomaly",
+              "version": "0.2"
+            }
+          },
+          "authority": "query",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "EVALUATE",
+            "target": "ent:api-pod-2",
+            "intent": "weigh the ancestry evidence"
+          }
+        }
+      }
+    },
+    {
+      "seq": 71,
+      "at": 4000,
+      "event": {
+        "type": "hypothesis_transitioned",
+        "hypothesis": "hyp:c2",
+        "transition": {
+          "at": 4000,
+          "from": "ANOMALOUS",
+          "to": "SUSPICIOUS",
+          "confidence": {
+            "value": 0.55,
+            "estimator": {
+              "name": "egress-anomaly",
+              "version": "0.2"
+            }
+          },
+          "evidence": [
+            {
+              "observation": "obs:proc-ancestry"
+            }
+          ],
+          "reason": "shell spawned by JVM, then curl to the same destination"
+        }
+      }
+    },
+    {
+      "seq": 72,
+      "at": 4500,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 5,
+          "at": 4500,
+          "phase": "EVALUATE",
+          "target": "ent:api-pod-2",
+          "reason": "suspicious, not yet probable; containment worth proposing",
+          "hypothesis": "hyp:c2",
+          "confidence": {
+            "value": 0.55,
+            "estimator": {
+              "name": "egress-anomaly",
+              "version": "0.2"
+            }
+          },
+          "authority": "correlate",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "PLAN",
+            "target": "ent:api-pod-2",
+            "intent": "propose quarantine of api-5d2b-2"
+          }
+        }
+      }
+    },
+    {
+      "seq": 73,
+      "at": 4800,
+      "event": {
+        "type": "action_proposed",
+        "action": {
+          "id": "act:isolate",
+          "agent": "agent:navi-01",
+          "capability": "cap:isolate",
+          "target": "ent:api-pod-2",
+          "hypothesis": "hyp:c2",
+          "rationale": "JVM-spawned shell beaconing to a rare port",
+          "expected_effect": "pod has no egress; api served by api-5d2b-1",
+          "proposed_at": 4800
+        }
+      }
+    },
+    {
+      "seq": 74,
+      "at": 4800,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 6,
+          "at": 4800,
+          "phase": "PLAN",
+          "target": "ent:api-pod-2",
+          "reason": "propose quarantine of api-5d2b-2",
+          "hypothesis": "hyp:c2",
+          "authority": "propose",
+          "action": "act:isolate",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "AUTHORISE",
+            "target": "ent:api-pod-2",
+            "intent": "request human approval for network isolation"
+          }
+        }
+      }
+    },
+    {
+      "seq": 75,
+      "at": 4900,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 7,
+          "at": 4900,
+          "phase": "AUTHORISE",
+          "target": "ent:api-pod-2",
+          "reason": "network isolation requires human approval; escalated",
+          "authority": "propose",
+          "action": "act:isolate",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "ACT",
+            "target": "ent:api-pod-2",
+            "intent": "isolate the pod once a human approves"
+          }
+        }
+      }
+    },
+    {
+      "seq": 76,
+      "at": 5200,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "authorise",
+          "at": 5200,
+          "approval": {
+            "id": "appr:cf-isolate",
+            "kind": {
+              "human": {
+                "principal": "oncall (hypothetical)"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "seq": 77,
+      "at": 5300,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "begin_execution",
+          "at": 5300
+        }
+      }
+    },
+    {
+      "seq": 78,
+      "at": 5300,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 8,
+          "at": 5300,
+          "phase": "ACT",
+          "target": "ent:api-pod-2",
+          "reason": "apply quarantine network policy",
+          "authority": "network_isolation",
+          "action": "act:isolate",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "VERIFY",
+            "target": "ent:api-pod-2",
+            "intent": "confirm no egress from the pod"
+          }
+        }
+      }
+    },
+    {
+      "seq": 79,
+      "at": 5600,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "execution_returned",
+          "at": 5600,
+          "receipt": "networkpolicy quarantine-api-5d2b-2 applied",
+          "ok": true
+        }
+      }
+    },
+    {
+      "seq": 80,
+      "at": 6500,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:cf-egress-denied",
+          "source": {
+            "system": "hypothetical/netflow",
+            "collector": "operator-fork"
+          },
+          "observed_at": 6500,
+          "subject": "ent:api-pod-2",
+          "kind": "net.outbound_denied",
+          "attributes": {
+            "dport": 4444,
+            "dst": "203.0.113.47"
+          }
+        }
+      }
+    },
+    {
+      "seq": 81,
+      "at": 6600,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "observe_effect",
+          "at": 6600,
+          "effect": [
+            {
+              "observation": "obs:cf-egress-denied"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "seq": 82,
+      "at": 7000,
+      "event": {
+        "type": "observation_recorded",
+        "observation": {
+          "id": "obs:cf-no-egress-window",
+          "source": {
+            "system": "hypothetical/netflow",
+            "collector": "operator-fork"
+          },
+          "observed_at": 7000,
+          "subject": "ent:api-pod-2",
+          "kind": "net.no_egress_window",
+          "attributes": {
+            "window_s": 300
+          }
+        }
+      }
+    },
+    {
+      "seq": 83,
+      "at": 7000,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-01",
+          "seq": 9,
+          "at": 7000,
+          "phase": "VERIFY",
+          "target": "ent:api-pod-2",
+          "reason": "check the pod stays without egress",
+          "authority": "query",
+          "action": "act:isolate",
+          "objective": "Explain the unknown outbound connection from api-5d2b-2",
+          "next": {
+            "phase": "LEARN",
+            "intent": "record the outcome"
+          }
+        }
+      }
+    },
+    {
+      "seq": 84,
+      "at": 7100,
+      "event": {
+        "type": "action_transitioned",
+        "action": "act:isolate",
+        "transition": {
+          "type": "verify",
+          "at": 7100,
+          "method": "no egress from pod to destination for 5 minutes",
+          "evidence": [
+            {
+              "observation": "obs:cf-no-egress-window"
+            }
+          ],
+          "passed": true
+        }
+      }
+    }
+  ]
+}

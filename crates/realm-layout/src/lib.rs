@@ -252,6 +252,7 @@ mod tests {
     fn empty_realm_is_just_the_universe() {
         let realm = Realm {
             grammar_version: realm_core::GRAMMAR_VERSION.into(),
+            branch: None,
             ontology_version: String::new(),
             compiler_version: String::new(),
             source_digest: String::new(),

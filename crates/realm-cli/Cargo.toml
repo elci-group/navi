@@ -17,6 +17,9 @@ realm-layout.workspace = true
 realm-render.workspace = true
 serde_json.workspace = true
 clap.workspace = true
+navi-events.workspace = true
+navi-ontology.workspace = true
+realm-replay.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

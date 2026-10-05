@@ -3,11 +3,13 @@ resolver = "2"
 members = [
     "crates/navi-ontology",
     "crates/navi-graph",
+    "crates/navi-events",
     "crates/navi-cli",
     "crates/realm-core",
     "crates/realm-compiler",
     "crates/realm-layout",
     "crates/realm-render",
+    "crates/realm-replay",
     "crates/realm-cli",
 ]
 
@@ -25,7 +27,9 @@ sha2 = "0.10"
 clap = { version = "4", features = ["derive"] }
 navi-ontology = { path = "crates/navi-ontology" }
 navi-graph = { path = "crates/navi-graph" }
+navi-events = { path = "crates/navi-events" }
 realm-core = { path = "crates/realm-core" }
 realm-compiler = { path = "crates/realm-compiler" }
 realm-layout = { path = "crates/realm-layout" }
 realm-render = { path = "crates/realm-render" }
+realm-replay = { path = "crates/realm-replay" }

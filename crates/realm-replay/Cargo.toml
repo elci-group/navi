@@ -1,0 +1,19 @@
+[package]
+name = "realm-replay"
+description = "Security DVR for the realm: per-instant frames, snapshot + ordered deltas, verified reconstruction, semantic compare."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+navi-ontology.workspace = true
+navi-graph.workspace = true
+navi-events.workspace = true
+realm-core.workspace = true
+realm-compiler.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+realm-render.workspace = true

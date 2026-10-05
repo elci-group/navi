@@ -266,6 +266,9 @@ pub fn agent(a: &RealmAgent) -> VisualContract {
         stroke: Token::Navi,
         line: Line::Solid,
         badges: BTreeSet::new(),
-        label: format!("{} {}", a.name, wire(&a.phase)),
+        label: match a.phase {
+            Some(p) => format!("{} {}", a.name, wire(&p)),
+            None => format!("{} idle", a.name),
+        },
     }
 }

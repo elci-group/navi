@@ -187,10 +187,23 @@ name = "navi-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "navi-events",
  "navi-graph",
  "navi-ontology",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "navi-events"
+version = "0.1.0"
+dependencies = [
+ "navi-graph",
+ "navi-ontology",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
 ]
 
 [[package]]
@@ -242,11 +255,14 @@ name = "realm-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "navi-events",
  "navi-graph",
+ "navi-ontology",
  "realm-compiler",
  "realm-core",
  "realm-layout",
  "realm-render",
+ "realm-replay",
  "serde_json",
 ]
 
@@ -269,6 +285,7 @@ dependencies = [
  "navi-ontology",
  "serde",
  "serde_json",
+ "sha2",
 ]
 
 [[package]]
@@ -288,6 +305,21 @@ dependencies = [
  "realm-core",
  "realm-layout",
  "serde_json",
+]
+
+[[package]]
+name = "realm-replay"
+version = "0.1.0"
+dependencies = [
+ "navi-events",
+ "navi-graph",
+ "navi-ontology",
+ "realm-compiler",
+ "realm-core",
+ "realm-render",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]

@@ -157,3 +157,68 @@ fn html_render_is_self_contained() {
     );
     assert!(html.contains("const DATA = {"));
 }
+
+fn log_fixture(name: &str) -> String {
+    fixtures()
+        .join(format!("logs/{name}.log.json"))
+        .display()
+        .to_string()
+}
+
+#[test]
+fn replay_and_dvr_from_a_log() {
+    let (code, out, _) = realm(&["replay", &log_fixture("repo-runtime"), "--at", "3200"]);
+    assert_eq!(code, 0);
+    assert!(out.starts_with("AT t+3200ms"));
+    assert!(out.contains("?ANOMALOUS"));
+    let (code, html, _) = realm(&["dvr", &log_fixture("credential-stuffing")]);
+    assert_eq!(code, 0);
+    assert!(html.contains("SECURITY DVR"));
+    let (code, _, err) = realm(&["replay", &log_fixture("repo-runtime"), "--at", "-1"]);
+    assert_eq!(code, 1);
+    assert!(err.contains("nothing had happened yet"));
+}
+
+#[test]
+fn stream_then_reconstruct() {
+    let out = tmp("stream.json");
+    let (code, _, _) = realm(&[
+        "stream",
+        &log_fixture("repo-runtime"),
+        "-o",
+        out.to_str().unwrap(),
+    ]);
+    assert_eq!(code, 0);
+    let (code, msg, _) = realm(&["reconstruct", out.to_str().unwrap()]);
+    assert_eq!(code, 0);
+    assert!(msg.contains("every digest matches"));
+    std::fs::remove_file(out).ok();
+}
+
+#[test]
+fn compare_against_a_branch_requires_its_parent() {
+    let branch = fixtures()
+        .join("forks/repo-runtime-approve-isolation.branch.json")
+        .display()
+        .to_string();
+    let (code, out, _) = realm(&[
+        "compare",
+        &log_fixture("repo-runtime"),
+        "7100",
+        "7100",
+        "--against",
+        &branch,
+    ]);
+    assert_eq!(code, 0);
+    assert!(out.contains("action act:isolate: PROPOSED → VERIFIED"));
+    let (code, _, err) = realm(&[
+        "compare",
+        &log_fixture("credential-stuffing"),
+        "0",
+        "0",
+        "--against",
+        &branch,
+    ]);
+    assert_eq!(code, 1);
+    assert!(err.contains("is not a branch forked from"));
+}

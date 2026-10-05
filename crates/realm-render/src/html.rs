@@ -99,6 +99,7 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
         .replace("{{SVG}}", &svg)
         .replace("{{DATA}}", &data)
         .replace("{{TOP}}", &svg::TOP.to_string())
+        .replace("{{BANNER}}", &banner_html(realm))
 }
 
 const TEMPLATE: &str = r##"<!doctype html>
@@ -132,7 +133,7 @@ const TEMPLATE: &str = r##"<!doctype html>
 </style>
 </head>
 <body>
-<header>
+{{BANNER}}<header>
   <b>NAVI TIMELINE</b>
   <button id="prev" title="previous event">◀</button>
   <button id="play" title="play">▶ play</button>
@@ -267,3 +268,12 @@ if (agent) {
 </body>
 </html>
 "##;
+
+pub(crate) fn banner_html(realm: &Realm) -> String {
+    realm.banner().map_or(String::new(), |b| {
+        format!(
+            r#"<div style="background:#3a2a08;color:#e0a030;border-bottom:2px dashed #e0a030;padding:8px 16px;font-weight:bold">{}</div>"#,
+            b.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+        )
+    })
+}

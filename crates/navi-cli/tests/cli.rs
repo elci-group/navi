@@ -89,3 +89,37 @@ fn brief_explains_navi_headlessly() {
     let (code, _, _) = navi(&["brief", &f, "agent:navi-01", "--at", "42"]);
     assert_eq!(code, 2);
 }
+
+#[test]
+fn log_derive_check_dvr_fork() {
+    let snap = root()
+        .join("scenarios/credential-stuffing.json")
+        .display()
+        .to_string();
+    let out = std::env::temp_dir().join(format!("navi-log-{}.json", std::process::id()));
+    let (code, _, notes) = navi(&["log", "derive", &snap, "-o", out.to_str().unwrap()]);
+    assert_eq!(code, 0);
+    assert!(notes.contains("note  ent:public-auth: split"));
+    let (code, ok, _) = navi(&["log", "check", out.to_str().unwrap()]);
+    assert_eq!(code, 0);
+    assert!(ok.contains("every prefix valid"));
+    let (code, dvr, _) = navi(&["log", "dvr", out.to_str().unwrap()]);
+    assert_eq!(code, 0);
+    assert!(dvr.contains("act:shield verified"));
+    std::fs::remove_file(&out).ok();
+
+    let base = root()
+        .join("logs/repo-runtime.log.json")
+        .display()
+        .to_string();
+    let spec = root()
+        .join("forks/repo-runtime-approve-isolation.json")
+        .display()
+        .to_string();
+    let (code, branch, _) = navi(&["log", "fork", &base, &spec]);
+    assert_eq!(code, 0);
+    assert!(branch.contains("\"branch\""));
+    let (code, state, _) = navi(&["log", "at", &base, "3200"]);
+    assert_eq!(code, 0);
+    assert!(state.contains("\"hyp:c2\""));
+}

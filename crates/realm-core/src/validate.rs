@@ -118,7 +118,7 @@ impl Realm {
         }
         for a in &self.agents {
             sourced(&a.realm_id, &a.source_ids, &mut out);
-            if a.source_ids.len() < 2 {
+            if a.source_ids.len() < 2 && a.phase.is_some() {
                 out.push(
                     C::MissingSource,
                     &a.realm_id,
@@ -400,13 +400,16 @@ impl Realm {
                 }
             }
             let top = a.loadout.iter().map(|s| s.authority).max();
-            if top.is_none_or(|t| a.authority > t)
-                && a.authority > navi_ontology::AuthorityLevel::Observe
+            let exercised = a
+                .authority
+                .unwrap_or(navi_ontology::AuthorityLevel::Observe);
+            if top.is_none_or(|t| exercised > t)
+                && exercised > navi_ontology::AuthorityLevel::Observe
             {
                 out.push(
                     C::AuthorityOverreach,
                     &a.realm_id,
-                    format!("exercising {:?} beyond its loadout", a.authority),
+                    format!("exercising {exercised:?} beyond its loadout"),
                 );
             }
         }
@@ -540,8 +543,24 @@ impl Realm {
                 }
                 prev = Some(w);
             }
+            if a.trajectory.is_empty()
+                && (a.phase.is_some()
+                    || a.at.is_some()
+                    || a.reason.is_some()
+                    || a.authority.is_some()
+                    || a.location.is_some())
+            {
+                out.push(
+                    C::TrajectoryViolation,
+                    &a.realm_id,
+                    "an agent with no events cannot have a phase, reason, authority or location",
+                );
+            }
             if let Some(last) = a.trajectory.last() {
-                if last.phase != a.phase || last.location != a.location || last.at != a.at {
+                if Some(last.phase) != a.phase
+                    || last.location != a.location
+                    || Some(last.at) != a.at
+                {
                     out.push(
                         C::TrajectoryViolation,
                         &a.realm_id,

@@ -118,8 +118,11 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
         }
     }
 
+    let banner = realm
+        .banner()
+        .map_or(String::new(), |b| format!("!!! {b} !!!\n"));
     let mut out = format!(
-        "REALM  {}  ·  {}  ·  {}\nsource {}  epoch {}\n\n",
+        "{banner}REALM  {}  ·  {}  ·  {}\nsource {}  epoch {}\n\n",
         realm.grammar_version,
         realm.ontology_version,
         realm.compiler_version,
@@ -200,7 +203,9 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
 }
 
 pub fn trace(realm: &Realm) -> String {
-    let mut out = String::new();
+    let mut out = realm
+        .banner()
+        .map_or(String::new(), |b| format!("!!! {b} !!!\n\n"));
     for a in &realm.agents {
         out.push_str(&format!(
             "TRAJECTORY  {} ({})  ·  {} waypoint(s)\n",

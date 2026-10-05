@@ -9,10 +9,12 @@ embodied, observable presence.
 machine state → semantic state → spatial state → human perception
 ```
 
-**Status: Phase 2 (Navi traversal) complete.** Phase 0 built the semantic
-layer; Phase 1 projected it into a spatial realm; Phase 2 makes Navi's
-attention move through that realm over time, and lets an operator select
-Navi — or anything else — to see why it is there.
+**Status: Phase 3 (replay) complete.** Phase 0 built the semantic layer;
+Phase 1 projected it into a spatial realm; Phase 2 made Navi's attention
+move through it and explain itself; Phase 3 makes the whole incident
+replayable — every state change is an event, the realm can be rewound to
+any instant, compared across instants or against a counterfactual fork,
+and streamed to clients as a snapshot plus verifiable deltas.
 
 ![The repo + runtime scenario rendered as a realm](docs/realm-repo-runtime.svg)
 
@@ -30,12 +32,14 @@ interactive version.*
 | Crate | Role |
 |---|---|
 | `navi-ontology` | The canonical vocabulary: observations, entities, relationships, hypotheses, threats, safeguards, capabilities, authority, agents, actions, provenance, confidence. Each type enforces its own invariants on construction **and** on deserialization. |
+| `navi-events` | The incident log: event-sourced state where every prefix must be a valid graph; derivation from snapshots; counterfactual forks; DVR lines. |
 | `navi-graph` | The semantic state graph. Validates a whole document (references, provenance grounding, authority fidelity, agent event stream), produces a canonical form + `sha256` digest, and reverse-resolves any object to raw observations. |
 | `navi-cli` | The `navi` binary. |
 | `realm-core` | The versioned realm grammar (§3), Realm IR (§4), visual contracts, and the validator every renderer must pass. |
 | `realm-compiler` | `SemanticGraph → Realm`. Pure and deterministic; no security reasoning of its own. |
 | `realm-layout` | Deterministic 2D containment layout on an integer grid. |
 | `realm-render` | Disposable renderers: terminal text and standalone SVG. No security logic. |
+| `realm-replay` | The security DVR: a realm per instant, snapshot + ordered deltas with per-frame digests, verified reconstruction, semantic COMPARE. |
 | `realm-cli` | The `realm` binary. |
 
 `navi-*` crates never depend on `realm-*` (enforced by a test): Navi runs
@@ -78,6 +82,32 @@ with the renderer absent.
 | §22 Interpolate movement, not semantics | The HTML timeline animates Navi along the validated route, but the brief snaps at the waypoint, and arrival is guaranteed by a timer, so semantic state never waits on an animation frame. |
 | §5 Selecting exposes the chain | The realm carries an evidence chain for every entity, edge, control and hazard, each rooted at the object's primary source and reaching at least one raw observation (validated). Clicking anything in the HTML view shows it. |
 
+## Replay (Phase 3)
+
+| Directive clause | Enforcement |
+|---|---|
+| §15 Event sourced | An incident is an append-only `navi-log/0.1`: observations, hypotheses and actions are immutable and evolve only through their own transitions; entities, relationships, controls, capabilities and agents change by re-assertion. The graph at instant *t* is the fold of the log up to *t*. |
+| §15 Every moment was legal | `navi log check` validates the state after **every** instant, not just the end: an action named by Navi before it was proposed is caught at the instant it happened even when the final state looks fine. |
+| §15 LIVE · PAUSE · STEP · REWIND · REPLAY | `realm replay --at <t>` renders any instant; `realm dvr` writes a page with all the transport controls over pre-rendered frames (one layout for the whole incident, so places never jump). |
+| §15 COMPARE | `realm compare <log> <t1> <t2>` lists what changed — new hazards, risk levels, action lifecycles, Navi's phase and location. In the DVR, mark an instant as A and move. |
+| §15 FORK | `navi log fork` continues a recorded incident from an instant with operator-authored hypothetical events. The branch is a separate log, carries its parent's digest, is validated by exactly the same rules (a counterfactual cannot skip approval or verification either), never touches the original, and every render of it says **NOT REALITY**. `realm compare … --against <branch>` only accepts a branch forked from that log. Predicting what Navi *would* have done needs a simulator (later phase); forks record and check scenarios, they do not invent agent behaviour. |
+| §16 Security DVR | `navi log dvr` prints the incident as one line per event (`act:shield command returned …; effect not yet observed`). |
+| §22 Snapshot + ordered deltas | `realm stream` sends one snapshot and whole-object upserts per instant, each frame with the digest of the realm it must produce; `realm reconstruct` rebuilds every frame and verifies every digest. Tampering is detected. |
+| §26 Replay fidelity | Tests rebuild every frame from the stream and require exact equality with direct compilation, and require the last frame to equal the original snapshot's realm. |
+
+**Snapshots → logs.** `navi log derive` turns a snapshot document into a
+log. A snapshot has no history, so derivation is conservative and says what
+it did: observations keep their timestamps; nothing appears before its
+evidence; an entity whose final form cites later evidence is first asserted
+with only the evidence available then and trust `unknown` (its earlier trust
+is not knowable from a snapshot, so none is invented), then re-asserted in
+its final form. Deriving the original credential-stuffing scenario this way
+exposed an authoring error — Navi declared a next target before that entity
+had been observed — which is now fixed.
+
+An agent with no events yet is shown **idle**: its loadout is visible, but
+it has no phase, reason or exercised authority until it emits one.
+
 ## Usage
 
 ```sh
@@ -97,6 +127,23 @@ navi brief tests/fixtures/scenarios/repo-runtime.json agent:navi-01           # 
 navi brief tests/fixtures/scenarios/repo-runtime.json agent:navi-01 --at 3    # as of event #3
 navi brief tests/fixtures/scenarios/repo-runtime.json agent:navi-01 --all --json
 ```
+
+```sh
+navi log derive tests/fixtures/scenarios/repo-runtime.json -o incident.json
+navi log check  incident.json             # every prefix valid?
+navi log dvr    incident.json             # one line per event
+navi log at     incident.json 3200        # state document as of t+3200ms
+navi log fork   incident.json tests/fixtures/forks/repo-runtime-approve-isolation.json -o branch.json
+
+realm replay  incident.json --at 3200     # the realm at an instant (any -f format)
+realm dvr     incident.json -o dvr.html   # LIVE / PAUSE / STEP / REWIND / REPLAY / COMPARE
+realm compare incident.json 3000 4900
+realm compare incident.json 7100 7100 --against branch.json
+realm stream  incident.json -o stream.json && realm reconstruct stream.json
+```
+
+Every `realm` command also accepts an incident log where it accepts a state
+document.
 
 ```sh
 realm render tests/fixtures/scenarios/repo-runtime.json            # terminal map + HUD
@@ -130,9 +177,12 @@ observation (directive §26, reverse resolution):
 - Documents are validated whole. The event-sourced log with snapshot +
   delta streaming (§15, §22) is Phase 3.
 - STIX import/export does not exist yet.
-- Only Navi moves over time. The rest of the realm is drawn at its final
-  state; replaying the whole estate (and rewinding / forking it) is Phase 3.
-- The HTML timeline follows the first agent in the realm.
+- The single-realm HTML timeline follows the first agent; the DVR replays
+  everything.
+- The log has no retraction event yet: entities and relationships can be
+  changed but not withdrawn.
+- DVR pages embed one pre-rendered SVG per instant; fine for incidents of
+  tens of instants, not for days of telemetry.
 - An entity with several `contains` parents is nested under the first by
   relationship id; edges are drawn centre-to-centre without routing.
 
@@ -143,11 +193,12 @@ See [`ROADMAP.md`](ROADMAP.md).
 ## Testing
 
 ```sh
-cargo test                                   # 137 tests
+cargo test                                   # 164 tests
 cargo clippy --all-targets -- -D warnings
 ```
 
 Acceptance tests (`crates/navi-graph/tests/acceptance.rs`,
-`crates/realm-compiler/tests/phase1.rs`) each start from a valid scenario
+`crates/realm-compiler/tests/phase1.rs`, `phase2.rs`,
+`crates/navi-events/tests/log.rs`, `crates/realm-replay/tests/replay.rs`) each start from a valid scenario
 and inject exactly one fault — into the semantic graph for Phase 0, into
 compiled Realm IR for Phase 1.

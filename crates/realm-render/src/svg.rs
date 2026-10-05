@@ -77,6 +77,15 @@ pub fn render(realm: &Realm, layout: &Layout) -> String {
         esc(&realm.source_digest),
         realm.epoch
     );
+    if let Some(b) = realm.banner() {
+        // Counterfactual realms are labelled across the whole canvas.
+        let _ = writeln!(
+            s,
+            r##"<rect x="0" y="0" width="{w}" height="{h}" fill="none" stroke="#e0a030" stroke-width="6" stroke-dasharray="14 8"/><text x="{}" y="24" fill="#e0a030" font-size="14" font-weight="bold" text-anchor="end">{}</text>"##,
+            w - 14,
+            esc(&b)
+        );
+    }
     let _ = writeln!(s, r#"<g transform="translate(10,{top})">"#);
 
     // Places, parents before children.

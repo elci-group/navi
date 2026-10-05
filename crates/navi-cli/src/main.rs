@@ -65,8 +65,167 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    /// Incident logs: derive, check, replay, fork (directive §15, §16).
+    #[command(subcommand)]
+    Log(LogCommand),
     /// Show the default production authority policy.
     Policy,
+}
+
+#[derive(Subcommand)]
+enum LogCommand {
+    /// Derive an incident log from a snapshot state document.
+    Derive {
+        file: PathBuf,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Check a log: structure, and that the state after every instant is valid.
+    Check { file: PathBuf },
+    /// The DVR: every event, in order, one line each.
+    Dvr { file: PathBuf },
+    /// The canonical state document as of instant `at` (milliseconds).
+    At {
+        file: PathBuf,
+        #[arg(allow_negative_numbers = true)]
+        at: i64,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Fork a log at an instant with hypothetical events (a counterfactual branch).
+    Fork {
+        file: PathBuf,
+        spec: PathBuf,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+}
+
+fn read_log(file: &PathBuf) -> Result<navi_events::IncidentLog, String> {
+    let text = std::fs::read_to_string(file).map_err(|e| format!("{}: {e}", file.display()))?;
+    navi_events::IncidentLog::from_json(&text)
+        .map_err(|e| format!("{}: not an incident log: {e}", file.display()))
+}
+
+fn write_out(output: Option<PathBuf>, content: &str) -> ExitCode {
+    match output {
+        Some(p) => match std::fs::write(&p, content) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("{}: {e}", p.display());
+                ExitCode::from(1)
+            }
+        },
+        None => {
+            out!("{content}");
+            ExitCode::SUCCESS
+        }
+    }
+}
+
+fn log_command(cmd: LogCommand) -> ExitCode {
+    let fail = |m: String| {
+        eprintln!("{m}");
+        ExitCode::from(1)
+    };
+    match cmd {
+        LogCommand::Derive { file, output } => {
+            let g = match load(&file) {
+                Ok(g) => g,
+                Err(_) => return with_graph(&file, |_| ()),
+            };
+            let (log, retimed) = navi_events::derive(&g);
+            for r in &retimed {
+                eprintln!("note  {}: {}", r.object, r.note);
+            }
+            write_out(
+                output,
+                &(serde_json::to_string_pretty(&log).expect("serializable") + "\n"),
+            )
+        }
+        LogCommand::Check { file } => match read_log(&file) {
+            Ok(log) => {
+                let v = log.validate();
+                if v.is_empty() {
+                    let branch = log.branch.as_ref().map_or(String::new(), |b| {
+                        format!("  COUNTERFACTUAL \"{}\" forked at {}", b.label, b.at)
+                    });
+                    outln!(
+                        "ok  {}  {} events, {} instants, every prefix valid{branch}",
+                        file.display(),
+                        log.events.len(),
+                        log.instants().len()
+                    );
+                    outln!("digest {}", log.digest());
+                    ExitCode::SUCCESS
+                } else {
+                    eprintln!("invalid  {}", file.display());
+                    for x in v {
+                        eprintln!("  {x}");
+                    }
+                    ExitCode::from(1)
+                }
+            }
+            Err(e) => fail(e),
+        },
+        LogCommand::Dvr { file } => match read_log(&file) {
+            Ok(log) => {
+                if let Some(b) = &log.branch {
+                    outln!(
+                        "COUNTERFACTUAL BRANCH \"{}\" — forked at {} from {} — NOT REALITY",
+                        b.label,
+                        b.at,
+                        b.fork_of
+                    );
+                }
+                for e in &log.events {
+                    outln!("{:>10}  #{:<3} {}", e.at.to_string(), e.seq, e.summary());
+                }
+                ExitCode::SUCCESS
+            }
+            Err(e) => fail(e),
+        },
+        LogCommand::At { file, at, output } => match read_log(&file) {
+            Ok(log) => match log.graph_at(navi_ontology::Timestamp(at)) {
+                Ok(g) => {
+                    let v: serde_json::Value =
+                        serde_json::from_str(&g.canonical_json()).expect("canonical json");
+                    write_out(
+                        output,
+                        &(serde_json::to_string_pretty(&v).expect("serializable") + "\n"),
+                    )
+                }
+                Err(e) => fail(e.to_string()),
+            },
+            Err(e) => fail(e),
+        },
+        LogCommand::Fork { file, spec, output } => {
+            let log = match read_log(&file) {
+                Ok(l) => l,
+                Err(e) => return fail(e),
+            };
+            let spec: navi_events::ForkSpec = match std::fs::read_to_string(&spec)
+                .map_err(|e| e.to_string())
+                .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
+            {
+                Ok(s) => s,
+                Err(e) => return fail(format!("{}: {e}", spec.display())),
+            };
+            match navi_events::fork(&log, &spec) {
+                Ok(branch) => write_out(
+                    output,
+                    &(serde_json::to_string_pretty(&branch).expect("serializable") + "\n"),
+                ),
+                Err(v) => {
+                    eprintln!("fork rejected");
+                    for x in v {
+                        eprintln!("  {x}");
+                    }
+                    ExitCode::from(1)
+                }
+            }
+        }
+    }
 }
 
 fn load(file: &PathBuf) -> Result<SemanticGraph, (String, Option<Vec<navi_graph::Violation>>)> {
@@ -177,6 +336,7 @@ fn main() -> ExitCode {
             }
             ExitCode::SUCCESS
         }
+        Command::Log(cmd) => log_command(cmd),
         Command::Policy => {
             let p = AuthorityPolicy::default_production();
             outln!("authority policy {}", p.version);

@@ -179,15 +179,15 @@ pub fn compile(g: &SemanticGraph) -> Realm {
                 name: a.name.clone(),
                 role: a.role,
                 semantic_type: Primitive::Navi,
-                phase: ev.map_or(AgentPhase::Perceive, |e| e.phase),
-                at: ev.map_or(Timestamp(0), |e| e.at),
+                phase: ev.map(|e| e.phase),
+                at: ev.map(|e| e.at),
                 location: at.and_then(|e| e.target.as_ref()).map(rid),
-                reason: ev.map_or_else(|| "no events yet".into(), |e| e.reason.clone()),
+                reason: ev.map(|e| e.reason.clone()),
                 hypothesis: belief.and_then(|e| e.hypothesis.as_ref()).map(rid),
                 confidence: estimate
                     .and_then(|e| e.confidence.as_ref())
                     .map(ConfidenceView::from),
-                authority: ev.map_or(AuthorityLevel::Observe, |e| e.authority),
+                authority: ev.map(|e| e.authority),
                 loadout,
                 actions,
                 trajectory: vec![],
@@ -268,6 +268,11 @@ pub fn compile(g: &SemanticGraph) -> Realm {
 
     let mut realm = Realm {
         grammar_version: GRAMMAR_VERSION.to_string(),
+        branch: g.branch.as_ref().map(|b| BranchInfo {
+            fork_of: b.fork_of.clone(),
+            at: b.at,
+            label: b.label.clone(),
+        }),
         ontology_version: ONTOLOGY_VERSION.to_string(),
         compiler_version: COMPILER_VERSION.to_string(),
         source_digest: g.digest(),

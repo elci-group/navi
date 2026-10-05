@@ -31,7 +31,7 @@ fn one_waypoint_per_agent_event() {
         assert_eq!(a.trajectory.len(), n);
         let last = a.trajectory.last().unwrap();
         assert_eq!(
-            (last.phase, &last.location, last.at),
+            (Some(last.phase), &last.location, Some(last.at)),
             (a.phase, &a.location, a.at)
         );
         assert_eq!(r.validate(), vec![]);

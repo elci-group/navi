@@ -69,7 +69,10 @@ fn gate_label(g: Gate) -> &'static str {
 /// §8 HUD, bounded to structured telemetry — no free-form reasoning.
 pub fn hud_lines(realm: &Realm, a: &RealmAgent) -> Vec<String> {
     let mut l = vec![format!("NAVI / {}  ({})", a.name, wire(&a.role))];
-    l.push(format!("  PHASE      {}  at {}", wire(&a.phase), a.at));
+    match (a.phase, a.at) {
+        (Some(p), Some(t)) => l.push(format!("  PHASE      {}  at {t}", wire(&p))),
+        _ => l.push("  PHASE      idle — no agent events yet".into()),
+    }
     l.push(format!(
         "  TARGET     {}",
         a.location
@@ -80,7 +83,9 @@ pub fn hud_lines(realm: &Realm, a: &RealmAgent) -> Vec<String> {
     if let Some(o) = brief.and_then(|b| b.objective.as_deref()) {
         l.push(format!("  OBJECTIVE  {o}"));
     }
-    l.push(format!("  REASON     {}", a.reason));
+    if let Some(r) = &a.reason {
+        l.push(format!("  REASON     {r}"));
+    }
     if let Some(h) = a
         .hypothesis
         .as_deref()
@@ -104,7 +109,10 @@ pub fn hud_lines(realm: &Realm, a: &RealmAgent) -> Vec<String> {
     if let Some(c) = &a.confidence {
         l.push(format!("  CONFIDENCE {}  ({})", c.percent, c.estimator));
     }
-    l.push(format!("  EXERCISING {}", wire(&a.authority)));
+    l.push(format!(
+        "  EXERCISING {}",
+        a.authority.map_or("nothing".into(), |x| wire(&x))
+    ));
     l.push(format!(
         "  NEXT       {}",
         next_label(realm, brief.and_then(|b| b.next.as_ref()))

@@ -25,6 +25,10 @@ use std::collections::BTreeMap;
 #[serde(deny_unknown_fields)]
 pub struct GraphDocument {
     pub ontology_version: String,
+    /// Present only for counterfactual state (a fork of a recorded
+    /// incident). Reality never carries one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branch: Option<Branch>,
     #[serde(default)]
     pub authority_policy: AuthorityPolicy,
     #[serde(default)]
@@ -51,8 +55,21 @@ pub struct GraphDocument {
     pub actions: Vec<Action>,
 }
 
+/// Marks counterfactual state (directive §15 FORK): which recorded incident
+/// it was forked from, where, and why. Part of the canonical digest, so a
+/// branch can never hash like reality.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Branch {
+    /// Digest of the log this branch was forked from.
+    pub fork_of: String,
+    pub at: Timestamp,
+    pub label: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct SemanticGraph {
+    pub branch: Option<Branch>,
     pub authority_policy: AuthorityPolicy,
     pub epistemic_policy: EpistemicPolicy,
     pub observations: BTreeMap<ObservationId, Observation>,
@@ -130,6 +147,7 @@ impl SemanticGraph {
             }
         }
         let g = SemanticGraph {
+            branch: doc.branch,
             authority_policy: doc.authority_policy,
             epistemic_policy: doc.epistemic_policy,
             observations: index(doc.observations, |o| o.id.clone(), &mut v),
@@ -157,6 +175,7 @@ impl SemanticGraph {
     pub fn to_document(&self) -> GraphDocument {
         GraphDocument {
             ontology_version: ONTOLOGY_VERSION.to_string(),
+            branch: self.branch.clone(),
             authority_policy: self.authority_policy.clone(),
             epistemic_policy: self.epistemic_policy.clone(),
             observations: self.observations.values().cloned().collect(),

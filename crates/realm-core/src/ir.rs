@@ -22,6 +22,9 @@ pub fn realm_id(source: &str) -> String {
 #[serde(deny_unknown_fields)]
 pub struct Realm {
     pub grammar_version: String,
+    /// Set when this realm was compiled from a counterfactual branch.
+    /// Every renderer must label such a realm as not reality.
+    pub branch: Option<BranchInfo>,
     pub ontology_version: String,
     pub compiler_version: String,
     /// Digest of the canonical semantic graph this realm was compiled from.
@@ -37,6 +40,14 @@ pub struct Realm {
     /// the chain down to raw observations, so selecting it can show why it
     /// exists.
     pub evidence: Vec<Evidence>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BranchInfo {
+    pub fork_of: String,
+    pub at: Timestamp,
+    pub label: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -212,15 +223,17 @@ pub struct RealmAgent {
     pub name: String,
     pub role: AgentRole,
     pub semantic_type: Primitive,
-    pub phase: AgentPhase,
-    pub at: Timestamp,
+    /// `None` until the agent's first event: an idle Navi has no phase,
+    /// reason or exercised authority, and none is invented for it.
+    pub phase: Option<AgentPhase>,
+    pub at: Option<Timestamp>,
     /// The place Navi is attending to (last event target). `None` if it has
     /// never emitted an event with a target.
     pub location: Option<String>,
-    pub reason: String,
+    pub reason: Option<String>,
     pub hypothesis: Option<String>,
     pub confidence: Option<ConfidenceView>,
-    pub authority: AuthorityLevel,
+    pub authority: Option<AuthorityLevel>,
     pub loadout: Vec<LoadoutSlot>,
     pub actions: Vec<ActionView>,
     /// Every agent event in order: where attention went and why (§25 Phase 2).
@@ -229,6 +242,29 @@ pub struct RealmAgent {
 }
 
 impl Realm {
+    /// `sha256:` of the canonical JSON (sorted keys). Lets a client that
+    /// rebuilt a realm from snapshot + deltas prove it got the same state.
+    pub fn digest(&self) -> String {
+        use sha2::{Digest, Sha256};
+        let value = serde_json::to_value(self).expect("realm serializes");
+        let bytes = serde_json::to_string(&value).expect("value serializes");
+        let hash = Sha256::digest(bytes.as_bytes());
+        format!(
+            "sha256:{}",
+            hash.iter().map(|b| format!("{b:02x}")).collect::<String>()
+        )
+    }
+
+    /// A counterfactual banner line, if this realm is not reality.
+    pub fn banner(&self) -> Option<String> {
+        self.branch.as_ref().map(|b| {
+            format!(
+                "COUNTERFACTUAL BRANCH \"{}\" — forked at {} — NOT REALITY",
+                b.label, b.at
+            )
+        })
+    }
+
     pub fn entity(&self, id: &str) -> Option<&RealmEntity> {
         self.entities.iter().find(|e| e.realm_id == id)
     }

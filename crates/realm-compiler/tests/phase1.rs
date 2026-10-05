@@ -378,7 +378,7 @@ fn removing_a_hazard_from_risk_is_refused() {
 #[test]
 fn navi_never_depends_on_the_realm() {
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../");
-    for krate in ["navi-ontology", "navi-graph", "navi-cli"] {
+    for krate in ["navi-ontology", "navi-graph", "navi-events", "navi-cli"] {
         let manifest = std::fs::read_to_string(format!("{root}{krate}/Cargo.toml")).unwrap();
         assert!(
             !manifest.contains("realm-"),
