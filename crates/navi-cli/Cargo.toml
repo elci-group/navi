@@ -1,0 +1,20 @@
+[package]
+name = "navi-cli"
+description = "navi: validate, digest and explain canonical security-state documents."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "navi"
+path = "src/main.rs"
+
+[dependencies]
+navi-ontology.workspace = true
+navi-graph.workspace = true
+serde_json.workspace = true
+serde.workspace = true
+clap.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

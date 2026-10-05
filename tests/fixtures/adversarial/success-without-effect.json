@@ -1,0 +1,726 @@
+{
+  "ontology_version": "navi-ontology/0.1",
+  "observations": [
+    {
+      "id": "obs:inv-cmdb",
+      "source": {
+        "system": "cmdb",
+        "collector": "cmdb-sync/1"
+      },
+      "observed_at": 0,
+      "kind": "inventory.snapshot",
+      "attributes": {
+        "organisation": "lc",
+        "environment": "prod"
+      },
+      "raw_ref": "cmdb://snapshots/2026-10-05"
+    },
+    {
+      "id": "obs:inv-k8s",
+      "source": {
+        "system": "k8s-api",
+        "collector": "kube-state/prod-eu-1"
+      },
+      "observed_at": 0,
+      "kind": "topology.snapshot",
+      "attributes": {
+        "namespace": "identity",
+        "services": [
+          "auth-api",
+          "identity-db",
+          "public-auth"
+        ]
+      }
+    },
+    {
+      "id": "obs:waf-cfg",
+      "source": {
+        "system": "waf",
+        "collector": "waf-config-poller/1"
+      },
+      "observed_at": 0,
+      "subject": "ent:public-auth",
+      "kind": "waf.config",
+      "attributes": {
+        "mode": "block",
+        "rules": 41
+      }
+    },
+    {
+      "id": "obs:req-rate",
+      "source": {
+        "system": "envoy-access-log",
+        "collector": "fluentbit/prod-eu-1"
+      },
+      "observed_at": 1000,
+      "subject": "ent:public-auth",
+      "kind": "http.request_rate",
+      "attributes": {
+        "rpm": 4271,
+        "baseline_rpm": 93
+      },
+      "raw_ref": "loki://edge/2026-10-05T12:43:17Z"
+    },
+    {
+      "id": "obs:auth-fail",
+      "source": {
+        "system": "auth-api",
+        "collector": "otel/prod-eu-1"
+      },
+      "observed_at": 1000,
+      "subject": "ent:auth-api",
+      "kind": "auth.failure_ratio",
+      "attributes": {
+        "ratio": 0.962,
+        "window_s": 60
+      }
+    },
+    {
+      "id": "obs:novel-ids",
+      "source": {
+        "system": "envoy-access-log",
+        "collector": "fluentbit/prod-eu-1"
+      },
+      "observed_at": 2000,
+      "subject": "ent:src-cluster",
+      "kind": "identity.novel_sources",
+      "attributes": {
+        "count": 312
+      }
+    },
+    {
+      "id": "obs:reputation",
+      "source": {
+        "system": "threat-intel",
+        "collector": "ti-enricher/2"
+      },
+      "observed_at": 3000,
+      "subject": "ent:src-cluster",
+      "kind": "threatintel.reputation",
+      "attributes": {
+        "listed": 141,
+        "of": 312
+      }
+    },
+    {
+      "id": "obs:rl-active",
+      "source": {
+        "system": "waf",
+        "collector": "waf-config-poller/1"
+      },
+      "observed_at": 6000,
+      "subject": "ent:public-auth",
+      "kind": "waf.rule_active",
+      "attributes": {
+        "rule": "rl-edge-001"
+      }
+    },
+    {
+      "id": "obs:rate-after",
+      "source": {
+        "system": "envoy-access-log",
+        "collector": "fluentbit/prod-eu-1"
+      },
+      "observed_at": 8000,
+      "subject": "ent:public-auth",
+      "kind": "http.request_rate",
+      "attributes": {
+        "rpm": 180,
+        "baseline_rpm": 93
+      }
+    },
+    {
+      "id": "obs:canary-login",
+      "source": {
+        "system": "synthetics",
+        "collector": "canary/eu-1"
+      },
+      "observed_at": 9000,
+      "subject": "ent:auth-api",
+      "kind": "synthetic.login",
+      "attributes": {
+        "result": "success",
+        "latency_ms": 212
+      }
+    }
+  ],
+  "entities": [
+    {
+      "id": "ent:org",
+      "class": "organisation",
+      "name": "lc",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv-cmdb"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:prod",
+      "class": "environment",
+      "name": "prod",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv-cmdb"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:identity",
+      "class": "domain",
+      "name": "identity",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:auth-api",
+      "class": "service",
+      "name": "auth-api",
+      "trust": "unverified",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:identity-db",
+      "class": "data_store",
+      "name": "identity-db",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:public-auth",
+      "class": "endpoint",
+      "name": "public-auth",
+      "trust": "degraded",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        },
+        {
+          "hypothesis": "hyp:cred-stuffing"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:src-cluster",
+      "class": "external_actor",
+      "name": "312 novel source identities",
+      "trust": "unknown",
+      "provenance": [
+        {
+          "observation": "obs:novel-ids"
+        },
+        {
+          "observation": "obs:reputation"
+        }
+      ],
+      "observed_at": 2000
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel:org-prod",
+      "kind": "contains",
+      "from": "ent:org",
+      "to": "ent:prod",
+      "provenance": [
+        {
+          "observation": "obs:inv-cmdb"
+        }
+      ]
+    },
+    {
+      "id": "rel:prod-identity",
+      "kind": "contains",
+      "from": "ent:prod",
+      "to": "ent:identity",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ]
+    },
+    {
+      "id": "rel:identity-auth",
+      "kind": "contains",
+      "from": "ent:identity",
+      "to": "ent:auth-api",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ]
+    },
+    {
+      "id": "rel:identity-db",
+      "kind": "contains",
+      "from": "ent:identity",
+      "to": "ent:identity-db",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ]
+    },
+    {
+      "id": "rel:identity-edge",
+      "kind": "contains",
+      "from": "ent:identity",
+      "to": "ent:public-auth",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ]
+    },
+    {
+      "id": "rel:edge-auth",
+      "kind": "communicates_with",
+      "from": "ent:public-auth",
+      "to": "ent:auth-api",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ]
+    },
+    {
+      "id": "rel:auth-db",
+      "kind": "depends_on",
+      "from": "ent:auth-api",
+      "to": "ent:identity-db",
+      "provenance": [
+        {
+          "observation": "obs:inv-k8s"
+        }
+      ]
+    },
+    {
+      "id": "rel:src-edge",
+      "kind": "communicates_with",
+      "from": "ent:src-cluster",
+      "to": "ent:public-auth",
+      "provenance": [
+        {
+          "observation": "obs:req-rate"
+        },
+        {
+          "observation": "obs:novel-ids"
+        }
+      ]
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp:cred-stuffing",
+      "subjects": [
+        "ent:public-auth",
+        "ent:auth-api"
+      ],
+      "claim": "credential_stuffing",
+      "attack": [
+        "TA0006",
+        "T1110.004"
+      ],
+      "opened_at": 1500,
+      "opened_as": "ANOMALOUS",
+      "initial_confidence": {
+        "value": 0.4,
+        "estimator": {
+          "name": "auth-anomaly",
+          "version": "0.1"
+        }
+      },
+      "initial_evidence": [
+        {
+          "observation": "obs:req-rate"
+        },
+        {
+          "observation": "obs:auth-fail"
+        }
+      ],
+      "transitions": [
+        {
+          "at": 2500,
+          "from": "ANOMALOUS",
+          "to": "SUSPICIOUS",
+          "confidence": {
+            "value": 0.62,
+            "estimator": {
+              "name": "auth-anomaly",
+              "version": "0.1"
+            }
+          },
+          "evidence": [
+            {
+              "observation": "obs:novel-ids"
+            }
+          ],
+          "reason": "312 never-seen source identities in one window"
+        },
+        {
+          "at": 3500,
+          "from": "SUSPICIOUS",
+          "to": "PROBABLE",
+          "confidence": {
+            "value": 0.83,
+            "estimator": {
+              "name": "auth-anomaly",
+              "version": "0.1"
+            }
+          },
+          "evidence": [
+            {
+              "observation": "obs:reputation"
+            },
+            {
+              "derived": {
+                "rule": "source_distribution_anomaly",
+                "inputs": [
+                  {
+                    "observation": "obs:novel-ids"
+                  },
+                  {
+                    "observation": "obs:req-rate"
+                  }
+                ]
+              }
+            }
+          ],
+          "reason": "45% of sources reputation-listed; distribution matches distributed stuffing"
+        }
+      ]
+    }
+  ],
+  "threats": [
+    {
+      "id": "thr:stuffing",
+      "hypothesis": "hyp:cred-stuffing",
+      "actor": "ent:src-cluster",
+      "targets": [
+        "ent:public-auth",
+        "ent:auth-api"
+      ]
+    }
+  ],
+  "safeguards": [
+    {
+      "id": "sg:edge-waf",
+      "kind": "waf",
+      "name": "edge WAF",
+      "protects": [
+        "ent:public-auth"
+      ],
+      "d3fend": [
+        "D3-ITF"
+      ],
+      "status": "active",
+      "provenance": [
+        {
+          "observation": "obs:waf-cfg"
+        }
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "cap:scan",
+      "kind": "SCAN",
+      "scope": [
+        "ent:prod"
+      ],
+      "target_classes": [
+        "service",
+        "endpoint",
+        "data_store",
+        "external_actor"
+      ],
+      "authority": "query",
+      "risk_class": "low",
+      "approval_requirement": "autonomous",
+      "rollback_method": "not_applicable",
+      "verification_method": "query returned a result set",
+      "expiry": "never"
+    },
+    {
+      "id": "cap:shield",
+      "kind": "SHIELD",
+      "scope": [
+        "ent:identity"
+      ],
+      "target_classes": [
+        "endpoint"
+      ],
+      "authority": "temporary_containment",
+      "risk_class": "low",
+      "approval_requirement": "policy_dependent",
+      "rollback_method": {
+        "method": "delete rate-limit rule"
+      },
+      "verification_method": "edge rpm back near baseline and synthetic login succeeds",
+      "expiry": {
+        "at": 3600000
+      }
+    },
+    {
+      "id": "cap:barrier",
+      "kind": "BARRIER",
+      "scope": [
+        "ent:identity"
+      ],
+      "target_classes": [
+        "endpoint"
+      ],
+      "authority": "permanent_policy_change",
+      "risk_class": "high",
+      "approval_requirement": "human_approval",
+      "rollback_method": {
+        "method": "revert WAF policy to previous revision"
+      },
+      "verification_method": "blocked sources receive 403 and synthetic login succeeds",
+      "expiry": "never"
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent:navi-01",
+      "name": "LC-DEFENCE-01",
+      "role": "guardian",
+      "loadout": [
+        "cap:scan",
+        "cap:shield",
+        "cap:barrier"
+      ]
+    }
+  ],
+  "agent_events": [
+    {
+      "agent": "agent:navi-01",
+      "seq": 1,
+      "at": 1000,
+      "phase": "PERCEIVE",
+      "target": "ent:public-auth",
+      "reason": "request rate +4493% over baseline",
+      "authority": "observe"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 2,
+      "at": 1200,
+      "phase": "ORIENT",
+      "target": "ent:public-auth",
+      "reason": "locate endpoint in identity domain",
+      "authority": "query"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 3,
+      "at": 1500,
+      "phase": "HYPOTHESISE",
+      "target": "ent:auth-api",
+      "reason": "authentication anomaly",
+      "hypothesis": "hyp:cred-stuffing",
+      "confidence": {
+        "value": 0.4,
+        "estimator": {
+          "name": "auth-anomaly",
+          "version": "0.1"
+        }
+      },
+      "authority": "correlate"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 4,
+      "at": 2500,
+      "phase": "INVESTIGATE",
+      "target": "ent:src-cluster",
+      "reason": "inspect identity/source correlation",
+      "hypothesis": "hyp:cred-stuffing",
+      "confidence": {
+        "value": 0.62,
+        "estimator": {
+          "name": "auth-anomaly",
+          "version": "0.1"
+        }
+      },
+      "authority": "query"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 5,
+      "at": 3500,
+      "phase": "EVALUATE",
+      "target": "ent:src-cluster",
+      "reason": "reputation correlation",
+      "hypothesis": "hyp:cred-stuffing",
+      "confidence": {
+        "value": 0.83,
+        "estimator": {
+          "name": "auth-anomaly",
+          "version": "0.1"
+        }
+      },
+      "authority": "correlate"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 6,
+      "at": 4000,
+      "phase": "PLAN",
+      "target": "ent:public-auth",
+      "reason": "propose permanent block of listed sources",
+      "hypothesis": "hyp:cred-stuffing",
+      "action": "act:barrier",
+      "authority": "propose"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 7,
+      "at": 4100,
+      "phase": "AUTHORISE",
+      "target": "ent:public-auth",
+      "reason": "human approval required; escalated, not waiting",
+      "action": "act:barrier",
+      "authority": "propose"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 8,
+      "at": 4200,
+      "phase": "PLAN",
+      "target": "ent:public-auth",
+      "reason": "propose temporary rate limit meanwhile",
+      "hypothesis": "hyp:cred-stuffing",
+      "action": "act:shield",
+      "authority": "propose"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 9,
+      "at": 4500,
+      "phase": "AUTHORISE",
+      "target": "ent:public-auth",
+      "reason": "low-risk temporary containment policy matched",
+      "action": "act:shield",
+      "authority": "propose"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 10,
+      "at": 5000,
+      "phase": "ACT",
+      "target": "ent:public-auth",
+      "reason": "apply rate limit rl-edge-001",
+      "action": "act:shield",
+      "authority": "temporary_containment"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 11,
+      "at": 9000,
+      "phase": "VERIFY",
+      "target": "ent:public-auth",
+      "reason": "check rpm and canary login",
+      "action": "act:shield",
+      "authority": "query"
+    },
+    {
+      "agent": "agent:navi-01",
+      "seq": 12,
+      "at": 9500,
+      "phase": "LEARN",
+      "reason": "containment verified; barrier still awaiting human",
+      "authority": "correlate"
+    }
+  ],
+  "actions": [
+    {
+      "id": "act:barrier",
+      "agent": "agent:navi-01",
+      "capability": "cap:barrier",
+      "target": "ent:public-auth",
+      "hypothesis": "hyp:cred-stuffing",
+      "rationale": "141 of 312 sources reputation-listed",
+      "expected_effect": "listed sources receive 403",
+      "proposed_at": 4000
+    },
+    {
+      "id": "act:shield",
+      "agent": "agent:navi-01",
+      "capability": "cap:shield",
+      "target": "ent:public-auth",
+      "hypothesis": "hyp:cred-stuffing",
+      "rationale": "contain while barrier awaits approval",
+      "expected_effect": "edge rpm drops to near baseline",
+      "proposed_at": 4200,
+      "history": [
+        {
+          "type": "authorise",
+          "at": 4500,
+          "approval": {
+            "id": "appr:shield-1",
+            "kind": {
+              "policy": {
+                "rule": "low-risk-temporary-containment"
+              }
+            },
+            "expires_at": 3600000
+          }
+        },
+        {
+          "type": "begin_execution",
+          "at": 5000
+        },
+        {
+          "type": "execution_returned",
+          "at": 5500,
+          "receipt": "waf rule rl-edge-001 created",
+          "ok": true
+        },
+        {
+          "type": "observe_effect",
+          "at": 8100,
+          "effect": [
+            {
+              "action": "act:shield"
+            }
+          ]
+        },
+        {
+          "type": "verify",
+          "at": 9100,
+          "method": "edge rpm back near baseline and synthetic login succeeds",
+          "evidence": [
+            {
+              "observation": "obs:rate-after"
+            },
+            {
+              "observation": "obs:canary-login"
+            }
+          ],
+          "passed": true
+        }
+      ]
+    }
+  ]
+}
