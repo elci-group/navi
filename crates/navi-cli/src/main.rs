@@ -68,6 +68,17 @@ enum Command {
     /// Incident logs: derive, check, replay, fork (directive §15, §16).
     #[command(subcommand)]
     Log(LogCommand),
+    /// Phase 6 gate: trial every runnable intervention in a corpus and issue
+    /// a readiness certificate.
+    Readiness {
+        /// Incident logs to trial.
+        logs: Vec<PathBuf>,
+        /// Distinct actions per capability kind required for certification.
+        #[arg(long, default_value_t = 1)]
+        min_actions: usize,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
     /// Interventions: approve, cancel, run in the sandbox, roll back (§25 Phase 4).
     #[command(subcommand)]
     Act(ActCommand),
@@ -148,6 +159,42 @@ enum ActCommand {
         /// Undo the intervention if it does not take or does not verify.
         #[arg(long)]
         rollback_on_failure: bool,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// A human grants Navi autonomy for one capability, backed by a certificate.
+    Grant {
+        log: PathBuf,
+        capability: String,
+        #[arg(long)]
+        certificate: PathBuf,
+        /// Human interruption window, milliseconds.
+        #[arg(long, default_value_t = 30_000)]
+        grace_ms: i64,
+        /// Longest an autonomous intervention may stay in force.
+        #[arg(long, default_value_t = 600_000)]
+        max_duration_ms: i64,
+        #[arg(long)]
+        by: String,
+        #[arg(long)]
+        at: Option<i64>,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Navi self-authorises a proposed action under an autonomy grant.
+    Auto {
+        log: PathBuf,
+        action: String,
+        #[arg(long)]
+        at: Option<i64>,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Lift every executed intervention whose approval has lapsed (sandbox branch).
+    Expire {
+        log: PathBuf,
+        #[arg(long)]
+        at: Option<i64>,
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
@@ -268,6 +315,97 @@ fn act_command(cmd: ActCommand) -> ExitCode {
                 Ok(r) => {
                     report(&r);
                     write_out(output, &json(&r.branch))
+                }
+                Err(e) => refused(e),
+            }
+        }
+        ActCommand::Grant {
+            log,
+            capability,
+            certificate,
+            grace_ms,
+            max_duration_ms,
+            by,
+            at,
+            output,
+        } => {
+            let l = match read_log(&log) {
+                Ok(l) => l,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return ExitCode::from(1);
+                }
+            };
+            let cert: navi_readiness::Certificate = match std::fs::read_to_string(&certificate)
+                .map_err(|e| e.to_string())
+                .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
+            {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("{}: {e}", certificate.display());
+                    return ExitCode::from(1);
+                }
+            };
+            let cap = match navi_ontology::CapabilityId::new(capability) {
+                Ok(c) => c,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return ExitCode::from(1);
+                }
+            };
+            match navi_readiness::grant(
+                &l,
+                &cap,
+                &cert,
+                grace_ms,
+                max_duration_ms,
+                &by,
+                at.map(Timestamp),
+            ) {
+                Ok(next) => write_out(output, &json(&next)),
+                Err(e) => {
+                    eprintln!("refused: {e}");
+                    ExitCode::from(1)
+                }
+            }
+        }
+        ActCommand::Auto {
+            log,
+            action,
+            at,
+            output,
+        } => {
+            let (l, a) = load_both!(log, action);
+            match navi_actions::auto_approve(&l, &a, at.map(Timestamp)) {
+                Ok(next) => {
+                    if let Some(e) =
+                        next.events.iter().rev().find(|e| {
+                            matches!(e.event, navi_events::Event::ActionTransitioned { .. })
+                        })
+                    {
+                        eprintln!("  {}", e.summary());
+                    }
+                    write_out(output, &json(&next))
+                }
+                Err(e) => refused(e),
+            }
+        }
+        ActCommand::Expire { log, at, output } => {
+            let l = match read_log(&log) {
+                Ok(l) => l,
+                Err(e) => {
+                    eprintln!("{e}");
+                    return ExitCode::from(1);
+                }
+            };
+            match navi_actions::expire(&l, at.map(Timestamp)) {
+                Ok(Some(r)) => {
+                    report(&r);
+                    write_out(output, &json(&r.branch))
+                }
+                Ok(None) => {
+                    eprintln!("nothing has lapsed");
+                    ExitCode::SUCCESS
                 }
                 Err(e) => refused(e),
             }
@@ -528,6 +666,53 @@ fn main() -> ExitCode {
         }
         Command::Log(cmd) => log_command(cmd),
         Command::Act(cmd) => act_command(cmd),
+        Command::Readiness {
+            logs,
+            min_actions,
+            output,
+        } => {
+            let mut corpus = vec![];
+            for f in &logs {
+                match read_log(f) {
+                    Ok(l) => corpus.push(l),
+                    Err(e) => {
+                        eprintln!("{e}");
+                        return ExitCode::from(1);
+                    }
+                }
+            }
+            let cert =
+                navi_readiness::evaluate(&corpus, navi_readiness::Thresholds { min_actions });
+            for k in &cert.kinds {
+                eprintln!(
+                    "{:?}: {} ({} trialled, {} skipped)",
+                    k.kind,
+                    if k.ready { "READY" } else { "not ready" },
+                    k.trialled.len(),
+                    k.skipped.len()
+                );
+                for c in &k.criteria {
+                    eprintln!(
+                        "    {:<18} {:>3} trials  {}",
+                        c.name,
+                        c.trials,
+                        if c.passed() {
+                            "ok".to_string()
+                        } else {
+                            format!("FAILED: {}", c.failures.join("; "))
+                        }
+                    );
+                }
+                for s in &k.skipped {
+                    eprintln!("    skipped: {s}");
+                }
+            }
+            eprintln!("certified: {:?}  ({})", cert.certified, cert.digest);
+            write_out(
+                output,
+                &(serde_json::to_string_pretty(&cert).expect("serializable") + "\n"),
+            )
+        }
         Command::Policy => {
             let p = AuthorityPolicy::default_production();
             outln!("authority policy {}", p.version);

@@ -9,7 +9,7 @@ embodied, observable presence.
 machine state → semantic state → spatial state → human perception
 ```
 
-**Status: Phase 5 (adaptive world generation) complete.** Phase 0 built the semantic layer;
+**Status: all six directive phases built (Phase 6: gated, bounded autonomy).** Phase 0 built the semantic layer;
 Phase 1 projected it into a spatial realm; Phase 2 made Navi's attention
 move through it and explain itself; Phase 3 makes the whole incident
 replayable — every state change is an event, the realm can be rewound to
@@ -18,7 +18,10 @@ and streamed to clients as a snapshot plus verifiable deltas; Phase 4 lets
 Navi act — block, isolate, revoke, roll back — behind the approval gates,
 in a sandbox, with every outcome evidenced and independently verified;
 Phase 5 makes the realm more detailed where attention is and lays it out
-along the chain that matters for the incident at hand.
+along the chain that matters for the incident at hand; Phase 6 is the gate
+to autonomy — certified by sandbox trials, granted by a human, limited by
+the ontology to bounded, expiring, reversible containment, and always
+interruptible.
 
 ![The repo + runtime scenario rendered as a realm](docs/realm-repo-runtime.svg)
 
@@ -39,6 +42,7 @@ interactive version.*
 | `navi-events` | The incident log: event-sourced state where every prefix must be a valid graph; derivation from snapshots; counterfactual forks; DVR lines. |
 | `navi-simulator` | A deterministic sandbox estate built from the graph (flows, credentials, interventions in force), with fault injection. Reports only as `sandbox` observations. |
 | `navi-actions` | The gated executor: approve and cancel (recorded in the real log), run and roll back (sandbox only, written as a counterfactual branch). |
+| `navi-readiness` | The Phase 6 gate: sandbox trials over an incident corpus, digest-bound readiness certificates, human autonomy grants. |
 | `navi-graph` | The semantic state graph. Validates a whole document (references, provenance grounding, authority fidelity, agent event stream), produces a canonical form + `sha256` digest, and reverse-resolves any object to raw observations. |
 | `navi-cli` | The `navi` binary. |
 | `realm-core` | The versioned realm grammar (§3), Realm IR (§4), visual contracts, and the validator every renderer must pass. |
@@ -157,6 +161,56 @@ realm replay tests/fixtures/logs/repo-runtime.log.json --at 3200 --lod attention
 realm render tests/fixtures/scenarios/repo-runtime.json --lod attention -f json   # the view itself
 ```
 
+## Gated autonomy (Phase 6)
+
+§25: production autonomy "only after deterministic replay, provenance,
+rollback, authority and verification have demonstrated sufficient
+reliability". Three separate locks, held by three different parties:
+
+1. **Evidence — `navi readiness`.** Every runnable intervention in a corpus
+   of incidents is trialled in the sandbox: a clean run (must verify), a
+   repeat (must be identical), each injected fault (must *not* reach
+   success), a rollback (must restore, observed), a cancellation (must
+   stop it), an unapproved run (must be refused), plus every-prefix
+   validity and grounded effect/verification evidence. A capability kind is
+   certified only if every criterion held on every trial, on at least
+   `--min-actions` actions. Actions that cannot run in their incident are
+   reported as skipped, not counted. The certificate is digest-bound to its
+   content and the corpus.
+2. **A human decision — `navi act grant`.** A named human grants autonomy
+   for one capability, citing a certificate that covers its kind, with a
+   human interruption window (`--grace-ms`, at least 1 s) and a maximum
+   duration. Recorded in the incident's authority policy.
+3. **The ontology (0.4).** Whatever the certificate says, only **low-risk,
+   expiring, reversible temporary containment** can ever be granted.
+   Credential revocation, network isolation, destructive remediation and
+   permanent policy changes stay human-approved (§10).
+
+With a grant in place, `navi act auto` lets Navi self-authorise a proposed
+action — a real decision, recorded in the incident — with `not_before` (no
+execution until the interruption window has passed; `navi act cancel`
+still works) and `expires_at` (bounded by the grant and the capability).
+`navi act expire` lifts lapsed containment (doctrine V). The graph enforces
+all of it independently: a certificate-backed autonomous approval without a
+matching grant, without the window, lasting too long, or executed inside
+the window is an `AUTHORITY_VIOLATION`, whoever wrote the log.
+
+**No production actuator ships.** The executor runs through an `Actuator`
+trait; the sandbox is the only implementation, so every run is a
+counterfactual branch. A production actuator would implement the same
+trait, and its results would be appended to the incident itself (tested
+with a test-only fake). Connecting one to real systems is a deployment
+decision outside this repository.
+
+```sh
+navi readiness tests/fixtures/logs/*.log.json -o cert.json
+navi act grant  incident.json cap:shield --certificate cert.json --by ciso --grace-ms 30000 --max-duration-ms 600000 -o granted.json
+navi act auto   granted.json act:throttle -o decided.json        # Navi self-authorises (real)
+navi act cancel decided.json act:throttle --by oncall --reason "not needed"   # inside the window
+navi act run    decided.json act:throttle --at <not_before> -o ran.json         # sandbox branch
+navi act expire ran.json --at <expires_at> -o lifted.json
+```
+
 ## Usage
 
 ```sh
@@ -232,9 +286,12 @@ observation (directive §26, reverse resolution):
   changed but not withdrawn.
 - DVR pages embed one pre-rendered SVG per instant; fine for incidents of
   tens of instants, not for days of telemetry.
-- Interventions run only against the sandbox. There are no production
-  actuators, and Phase 6 (production autonomy) is gated on the directive's
-  reliability conditions.
+- Interventions run only against the sandbox; no production actuator ships.
+- Authority policy is state, not history: an autonomy grant must stay in
+  the policy while actions authorised under it exist (withdrawing it makes
+  those approvals invalid from then on).
+- Readiness thresholds are policy: the default certifies a kind after one
+  fully passing action, which suits the fixtures, not production.
 - The sandbox models flows, credentials and the controls interventions add;
   it does not model collateral service impact yet (§17 ghosts).
 - Level of detail and lenses are available for text, SVG and JSON; the
@@ -249,13 +306,14 @@ See [`ROADMAP.md`](ROADMAP.md).
 ## Testing
 
 ```sh
-cargo test                                   # 194 tests
+cargo test                                   # 204 tests
 cargo clippy --all-targets -- -D warnings
 ```
 
 Acceptance tests (`crates/navi-graph/tests/acceptance.rs`,
 `crates/realm-compiler/tests/phase1.rs`, `phase2.rs`,
 `crates/navi-events/tests/log.rs`, `crates/realm-replay/tests/replay.rs`,
-`crates/navi-actions/tests/act.rs`, `crates/realm-lod/tests/lod.rs`) each start from a valid scenario
+`crates/navi-actions/tests/act.rs`, `crates/realm-lod/tests/lod.rs`,
+`crates/navi-readiness/tests/autonomy.rs`) each start from a valid scenario
 and inject exactly one fault — into the semantic graph for Phase 0, into
 compiled Realm IR for Phase 1.

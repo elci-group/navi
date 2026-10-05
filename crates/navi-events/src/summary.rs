@@ -102,7 +102,22 @@ impl LogEntry {
                             format!("approved by human {principal}")
                         }
                         ApprovalKind::Policy { rule } => format!("approved by policy {rule}"),
-                        ApprovalKind::Autonomous { policy_version } => {
+                        ApprovalKind::Autonomous {
+                            policy_version,
+                            certificate: Some(c),
+                        } => {
+                            let nb = approval.not_before.map_or(String::new(), |t| {
+                                format!("; humans may cancel until {t}")
+                            });
+                            let ex = approval
+                                .expires_at
+                                .map_or(String::new(), |t| format!("; expires {t}"));
+                            format!("self-authorised by Navi under {policy_version} (certificate {}…){nb}{ex}", &c[..15.min(c.len())])
+                        }
+                        ApprovalKind::Autonomous {
+                            policy_version,
+                            certificate: None,
+                        } => {
                             format!("authorised autonomously ({policy_version})")
                         }
                     },

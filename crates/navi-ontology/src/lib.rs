@@ -36,7 +36,7 @@ mod time;
 
 pub use action::{Action, ActionState, ActionTransition, Approval, ApprovalKind, Principal};
 pub use agent::{Agent, AgentEvent, AgentPhase, AgentRole, NextStep};
-pub use authority::{AuthorityLevel, AuthorityPolicy, Gate};
+pub use authority::{AuthorityLevel, AuthorityPolicy, AutonomyGrant, Gate, MIN_GRACE_MS};
 pub use capability::{Capability, CapabilityKind, Expiry, RiskClass, Rollback};
 pub use confidence::{Confidence, Estimator};
 pub use entity::{Entity, EntityClass, TrustState};
@@ -63,4 +63,9 @@ pub use time::Timestamp;
 ///
 /// 0.3: a VERIFIED intervention may be rolled back (lifting containment);
 /// VERIFIED is no longer terminal.
-pub const ONTOLOGY_VERSION: &str = "navi-ontology/0.3";
+///
+/// 0.4: bounded autonomy — a human may grant Navi self-authorisation for
+/// low-risk, expiring, reversible temporary containment, backed by a
+/// readiness certificate and with a human interruption window
+/// (`Approval::not_before`).
+pub const ONTOLOGY_VERSION: &str = "navi-ontology/0.4";

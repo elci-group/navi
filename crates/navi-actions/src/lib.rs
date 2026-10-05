@@ -16,7 +16,7 @@
 use navi_events::{fork, Event, ForkEvent, ForkSpec, IncidentLog, LogViolation};
 use navi_graph::SemanticGraph;
 use navi_ontology::*;
-use navi_simulator::{describe, Faults, Intervention, Reading, Sandbox};
+use navi_simulator::{describe, Actuator, Faults, Intervention, Reading, Sandbox};
 use serde::Serialize;
 
 #[derive(Debug, thiserror::Error)]
@@ -124,6 +124,7 @@ pub fn approve(
         .expect("valid id"),
         kind,
         expires_at,
+        not_before: None,
     };
     Ok(log.append(vec![(
         t,
@@ -185,8 +186,11 @@ pub enum Outcome {
 
 #[derive(Debug)]
 pub struct Run {
-    /// The counterfactual branch holding the sandbox execution.
+    /// The resulting log: a counterfactual branch for a sandbox actuator,
+    /// the incident itself (appended) for a production one.
     pub branch: IncidentLog,
+    /// True if the result was written to reality.
+    pub in_reality: bool,
     pub outcome: Outcome,
     /// What happened, step by step.
     pub narrative: Vec<String>,
@@ -320,7 +324,13 @@ fn branch(
     log: &IncidentLog,
     label: String,
     s: Script,
+    sandbox: bool,
 ) -> Result<(IncidentLog, Vec<String>), Refusal> {
+    if !sandbox {
+        // A production actuator changed reality: record it in the incident.
+        let events = s.events.into_iter().map(|e| (e.at, e.event)).collect();
+        return Ok((log.append(events)?, s.narrative));
+    }
     let spec = ForkSpec {
         label,
         at: log.end().unwrap_or(Timestamp(0)),
@@ -331,7 +341,7 @@ fn branch(
 
 fn roll_back_steps(
     s: &mut Script,
-    sandbox: &mut Sandbox,
+    sandbox: &mut dyn Actuator,
     a: &Action,
     iv: &Intervention,
     at: Timestamp,
@@ -346,7 +356,7 @@ fn roll_back_steps(
     }
     if !all_back {
         return Err(Refusal::Unsupported(
-            "sandbox does not show the prior state restored; rollback not recorded".into(),
+            "the actuator does not show the prior state restored; rollback not recorded".into(),
         ));
     }
     let t = Timestamp(at.0 + 100);
@@ -363,6 +373,19 @@ fn roll_back_steps(
 
 /// Execute an authorised action in the sandbox, as a branch of `log`.
 pub fn run(log: &IncidentLog, action: &ActionId, opts: RunOptions) -> Result<Run, Refusal> {
+    let g = graph(log)?;
+    let mut sandbox = Sandbox::from_graph(&g).with_faults(opts.faults);
+    run_on(log, action, opts, &mut sandbox)
+}
+
+/// Execute an authorised action through any actuator. A sandbox writes a
+/// counterfactual branch; anything else writes to the incident itself.
+pub fn run_on(
+    log: &IncidentLog,
+    action: &ActionId,
+    opts: RunOptions,
+    sandbox: &mut dyn Actuator,
+) -> Result<Run, Refusal> {
     let g = graph(log)?;
     let (a, cap) = find(&g, action)?;
     let state = a.state();
@@ -398,36 +421,53 @@ pub fn run(log: &IncidentLog, action: &ActionId, opts: RunOptions) -> Result<Run
             a.id
         )));
     }
+    if let Some(nb) = a
+        .approval()
+        .and_then(|ap| ap.not_before)
+        .filter(|nb| t0 < *nb)
+    {
+        return Err(Refusal::NotRunnable {
+            action: a.id.clone(),
+            state,
+            why: format!("inside the human interruption window: it may not run before {nb}"),
+        });
+    }
     let iv = Intervention::for_action(&g, a).map_err(Refusal::Unsupported)?;
-    let mut sandbox = Sandbox::from_graph(&g).with_faults(opts.faults);
+    let in_sandbox = sandbox.is_sandbox();
+    let via = sandbox.name();
     let mut s = script(&g, a)?;
 
     // Navi must legally reach ACT for *this* action.
     let last = last_agent_event(&g, &a.agent).expect("checked in script");
     let mut t = t0;
-    if !(last.phase == AgentPhase::Authorise && last.action.as_ref() == Some(&a.id)) {
-        if !last.phase.can_transition_to(AgentPhase::Plan) {
+    let at_authorise = last.phase == AgentPhase::Authorise && last.action.as_ref() == Some(&a.id);
+    if !at_authorise {
+        // Reach ACT for *this* action only along legal edges.
+        let via_plan = last.phase != AgentPhase::Plan;
+        if via_plan && !last.phase.can_transition_to(AgentPhase::Plan) {
             return Err(Refusal::Loop(format!(
                 "{} is at {:?} (event #{}); it cannot legally return to PLAN and ACT on {} from there",
                 a.agent, last.phase, last.seq, a.id
             )));
         }
-        s.agent_event(
-            t,
-            a,
-            AgentPhase::Plan,
-            AuthorityLevel::Propose,
-            format!("resume {}: authorisation is on record", a.id),
-            Some((AgentPhase::Authorise, "confirm the approval")),
-        );
-        t = Timestamp(t.0 + 100);
+        if via_plan {
+            s.agent_event(
+                t,
+                a,
+                AgentPhase::Plan,
+                AuthorityLevel::Propose,
+                format!("resume {}: authorisation is on record", a.id),
+                Some((AgentPhase::Authorise, "confirm the approval")),
+            );
+            t = Timestamp(t.0 + 100);
+        }
         s.agent_event(
             t,
             a,
             AgentPhase::Authorise,
             AuthorityLevel::Propose,
             "approval on record".into(),
-            Some((AgentPhase::Act, "execute in the sandbox")),
+            Some((AgentPhase::Act, "execute")),
         );
         t = Timestamp(t.0 + 100);
     }
@@ -436,14 +476,14 @@ pub fn run(log: &IncidentLog, action: &ActionId, opts: RunOptions) -> Result<Run
     s.transition(
         a,
         ActionTransition::BeginExecution { at: t },
-        &format!("execution begins in the sandbox: {what}"),
+        &format!("execution begins via {via}: {what}"),
     );
     s.agent_event(
         t,
         a,
         AgentPhase::Act,
         cap.authority,
-        format!("execute {what} (sandbox)"),
+        format!("execute {what} via {via}"),
         Some((AgentPhase::Verify, "check the effect independently")),
     );
     let tb = t;
@@ -479,9 +519,11 @@ pub fn run(log: &IncidentLog, action: &ActionId, opts: RunOptions) -> Result<Run
             log,
             format!("sandbox: {what} ({}) — command failed", a.id),
             s,
+            in_sandbox,
         )?;
         return Ok(Run {
             branch: b,
+            in_reality: !in_sandbox,
             outcome: Outcome::CommandFailed,
             narrative,
         });
@@ -510,16 +552,18 @@ pub fn run(log: &IncidentLog, action: &ActionId, opts: RunOptions) -> Result<Run
         );
         let mut rolled_back = false;
         if opts.rollback_on_failure {
-            roll_back_steps(&mut s, &mut sandbox, a, &iv, at(1700))?;
+            roll_back_steps(&mut s, sandbox, a, &iv, at(1700))?;
             rolled_back = true;
         }
         let (b, narrative) = branch(
             log,
             format!("sandbox: {what} ({}) — effect not observed", a.id),
             s,
+            in_sandbox,
         )?;
         return Ok(Run {
             branch: b,
+            in_reality: !in_sandbox,
             outcome: Outcome::EffectNotObserved { rolled_back },
             narrative,
         });
@@ -561,7 +605,7 @@ pub fn run(log: &IncidentLog, action: &ActionId, opts: RunOptions) -> Result<Run
     let outcome = if passed {
         Outcome::Verified
     } else if opts.rollback_on_failure {
-        roll_back_steps(&mut s, &mut sandbox, a, &iv, at(2700))?;
+        roll_back_steps(&mut s, sandbox, a, &iv, at(2700))?;
         Outcome::VerificationFailed { rolled_back: true }
     } else {
         Outcome::VerificationFailed { rolled_back: false }
@@ -570,9 +614,15 @@ pub fn run(log: &IncidentLog, action: &ActionId, opts: RunOptions) -> Result<Run
         Outcome::Verified => "verified",
         _ => "verification failed",
     };
-    let (b, narrative) = branch(log, format!("sandbox: {what} ({}) — {tag}", a.id), s)?;
+    let (b, narrative) = branch(
+        log,
+        format!("sandbox: {what} ({}) — {tag}", a.id),
+        s,
+        in_sandbox,
+    )?;
     Ok(Run {
         branch: b,
+        in_reality: !in_sandbox,
         outcome,
         narrative,
     })
@@ -584,6 +634,19 @@ pub fn roll_back(
     action: &ActionId,
     by: &str,
     at: Option<Timestamp>,
+) -> Result<Run, Refusal> {
+    let g = graph(log)?;
+    let mut sandbox = Sandbox::from_graph(&g);
+    roll_back_on(log, action, by, at, &mut sandbox)
+}
+
+/// Undo an executed intervention through any actuator.
+pub fn roll_back_on(
+    log: &IncidentLog,
+    action: &ActionId,
+    by: &str,
+    at: Option<Timestamp>,
+    sandbox: &mut dyn Actuator,
 ) -> Result<Run, Refusal> {
     let g = graph(log)?;
     let (a, cap) = find(&g, action)?;
@@ -612,13 +675,183 @@ pub fn roll_back(
         return Err(Refusal::Gate("a rollback needs a named principal".into()));
     }
     let iv = Intervention::for_action(&g, a).map_err(Refusal::Unsupported)?;
-    let mut sandbox = Sandbox::from_graph(&g);
+    let in_sandbox = sandbox.is_sandbox();
     let mut s = script(&g, a)?;
-    roll_back_steps(&mut s, &mut sandbox, a, &iv, now(log, at))?;
-    let (b, narrative) = branch(log, format!("sandbox: roll back {} (by {by})", a.id), s)?;
+    roll_back_steps(&mut s, sandbox, a, &iv, now(log, at))?;
+    let (b, narrative) = branch(
+        log,
+        format!("sandbox: roll back {} (by {by})", a.id),
+        s,
+        in_sandbox,
+    )?;
     Ok(Run {
         branch: b,
+        in_reality: !in_sandbox,
         outcome: Outcome::RolledBack,
         narrative,
     })
+}
+
+/// Navi self-authorises a proposed action under an autonomy grant
+/// (directive §10, §25 Phase 6). Recorded in the incident itself — it is a
+/// real decision — with a human interruption window before execution may
+/// begin and an expiry bounded by the grant and the capability.
+pub fn auto_approve(
+    log: &IncidentLog,
+    action: &ActionId,
+    at: Option<Timestamp>,
+) -> Result<IncidentLog, Refusal> {
+    let g = graph(log)?;
+    let (a, cap) = find(&g, action)?;
+    let state = a.state();
+    if state != ActionState::Proposed {
+        return Err(Refusal::NotRunnable {
+            action: a.id.clone(),
+            state,
+            why: "only a proposed action can be authorised".into(),
+        });
+    }
+    let gate = g.effective_gate(cap);
+    if gate == Gate::HumanApproval {
+        return Err(Refusal::Gate(format!(
+            "{} requires a human; no grant can make it autonomous",
+            cap.id
+        )));
+    }
+    let grant = g.authority_policy.grant_for(&cap.id).ok_or_else(|| {
+        Refusal::Gate(format!(
+            "no autonomy grant for {}; a human or policy must approve",
+            cap.id
+        ))
+    })?;
+    grant.check(cap).map_err(Refusal::Gate)?;
+    let t = now(log, at);
+    if cap.expired_at(t) {
+        return Err(Refusal::Expired(format!("{} expired before {t}", cap.id)));
+    }
+    let cap_end = match cap.expiry {
+        Expiry::At(e) => e,
+        Expiry::Never => unreachable!("grant.check requires an expiry"),
+    };
+    let not_before = Timestamp(t.0 + grant.grace_ms);
+    let expires = Timestamp((t.0 + grant.max_duration_ms).min(cap_end.0));
+    if expires <= not_before {
+        return Err(Refusal::Expired(format!(
+            "{} would expire before its interruption window ends",
+            cap.id
+        )));
+    }
+
+    let mut s = script(&g, a)?;
+    let last = last_agent_event(&g, &a.agent).expect("checked in script");
+    if last.phase != AgentPhase::Plan {
+        if !last.phase.can_transition_to(AgentPhase::Plan) {
+            return Err(Refusal::Loop(format!(
+                "{} is at {:?} (event #{}); it cannot legally return to PLAN for {}",
+                a.agent, last.phase, last.seq, a.id
+            )));
+        }
+        s.agent_event(
+            t,
+            a,
+            AgentPhase::Plan,
+            AuthorityLevel::Propose,
+            format!("resume {}", a.id),
+            Some((
+                AgentPhase::Authorise,
+                "self-authorise under the autonomy grant",
+            )),
+        );
+    }
+    let n = a.history.len() + 1;
+    let approval = Approval {
+        id: ApprovalId::new(format!(
+            "appr:{}-auto-{n}",
+            a.id.as_str().trim_start_matches("act:")
+        ))
+        .expect("valid id"),
+        kind: ApprovalKind::Autonomous {
+            policy_version: g.authority_policy.version.clone(),
+            certificate: Some(grant.certificate.clone()),
+        },
+        expires_at: Some(expires),
+        not_before: Some(not_before),
+    };
+    s.transition(
+        a,
+        ActionTransition::Authorise { at: t, approval },
+        "self-authorised under the autonomy grant",
+    );
+    s.agent_event(
+        t,
+        a,
+        AgentPhase::Authorise,
+        AuthorityLevel::Propose,
+        format!("self-authorised under grant by {}; humans may cancel until {not_before}; expires {expires}", grant.granted_by),
+        Some((AgentPhase::Act, "execute after the interruption window")),
+    );
+    Ok(log.append(s.events.into_iter().map(|e| (e.at, e.event)).collect())?)
+}
+
+/// Roll back every executed intervention whose approval has lapsed by `at`
+/// (doctrine V: bounded, expiring, recoverable). `Ok(None)` if nothing is due.
+pub fn expire(log: &IncidentLog, at: Option<Timestamp>) -> Result<Option<Run>, Refusal> {
+    let g = graph(log)?;
+    let mut sandbox = Sandbox::from_graph(&g);
+    expire_on(log, at, &mut sandbox)
+}
+
+pub fn expire_on(
+    log: &IncidentLog,
+    at: Option<Timestamp>,
+    sandbox: &mut dyn Actuator,
+) -> Result<Option<Run>, Refusal> {
+    let g = graph(log)?;
+    let t = now(log, at);
+    let due: Vec<&Action> = g
+        .actions
+        .values()
+        .filter(|a| {
+            matches!(
+                a.state(),
+                ActionState::Executed
+                    | ActionState::Succeeded
+                    | ActionState::Verified
+                    | ActionState::VerificationFailed
+            ) && a
+                .approval()
+                .and_then(|ap| ap.expires_at)
+                .is_some_and(|e| e <= t)
+        })
+        .collect();
+    let Some(first) = due.first() else {
+        return Ok(None);
+    };
+    let in_sandbox = sandbox.is_sandbox();
+    let mut s = script(&g, first)?;
+    let mut clock = t;
+    let mut ids = vec![];
+    for a in &due {
+        let iv = Intervention::for_action(&g, a).map_err(Refusal::Unsupported)?;
+        s.narrative.push(format!(
+            "{clock}  {} approval lapsed; lifting {}",
+            a.id,
+            describe(&iv)
+        ));
+        roll_back_steps(&mut s, sandbox, a, &iv, clock)?;
+        ids.push(a.id.to_string());
+        clock = Timestamp(clock.0 + 200);
+    }
+    let (b, narrative) = branch(
+        log,
+        format!("sandbox: expired containment lifted ({})", ids.join(", ")),
+        s,
+        in_sandbox,
+    )?;
+    Ok(Some(Run {
+        branch: b,
+        in_reality: !in_sandbox,
+        outcome: Outcome::RolledBack,
+        narrative,
+    }))
 }

@@ -18,6 +18,7 @@ clap.workspace = true
 
 navi-events.workspace = true
 navi-actions.workspace = true
+navi-readiness.workspace = true
 navi-simulator.workspace = true
 
 [dev-dependencies]

@@ -59,6 +59,10 @@ pub enum ApprovalKind {
     /// Granted by the authority policy itself (only valid for autonomous gates).
     Autonomous {
         policy_version: String,
+        /// Required when the action changes reality: the certificate the
+        /// autonomy grant rests on.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        certificate: Option<String>,
     },
     Policy {
         rule: String,
@@ -75,6 +79,10 @@ pub struct Approval {
     pub kind: ApprovalKind,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expires_at: Option<Timestamp>,
+    /// Execution may not begin before this instant: the window in which a
+    /// human can still cancel an autonomous decision.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub not_before: Option<Timestamp>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -411,6 +419,7 @@ mod tests {
                     principal: "oncall".into(),
                 },
                 expires_at: None,
+                not_before: None,
             },
         }
     }
@@ -581,6 +590,7 @@ mod tests {
                     principal: "oncall".into(),
                 },
                 expires_at: Some(Timestamp(5)),
+                not_before: None,
             },
         });
         assert!(r.is_err());

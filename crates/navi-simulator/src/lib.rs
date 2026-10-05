@@ -109,6 +109,9 @@ pub enum FlowResult {
 /// One sandbox reading, ready to become an observation.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Reading {
+    /// The telemetry system that produced the reading (`sandbox` here).
+    pub system: String,
+    pub collector: String,
     pub kind: String,
     pub subject: EntityId,
     pub attributes: BTreeMap<String, serde_json::Value>,
@@ -119,8 +122,8 @@ impl Reading {
         Observation {
             id,
             source: TelemetrySource {
-                system: SOURCE_SYSTEM.into(),
-                collector: SIMULATOR.into(),
+                system: self.system,
+                collector: self.collector,
             },
             observed_at: at,
             subject: Some(self.subject),
@@ -273,6 +276,8 @@ impl Sandbox {
     /// Readings of the control itself: is it in force?
     pub fn control_reading(&self, action: &ActionId, iv: &Intervention) -> Reading {
         Reading {
+            system: SOURCE_SYSTEM.into(),
+            collector: SIMULATOR.into(),
             kind: "sandbox.control_state".into(),
             subject: iv.target().clone(),
             attributes: BTreeMap::from([
@@ -290,6 +295,8 @@ impl Sandbox {
             let valid = self.credential_valid(credential);
             return vec![(
                 Reading {
+                    system: SOURCE_SYSTEM.into(),
+                    collector: SIMULATOR.into(),
                     kind: "sandbox.auth_attempt".into(),
                     subject: credential.clone(),
                     attributes: BTreeMap::from([(
@@ -311,6 +318,8 @@ impl Sandbox {
                 let r = self.flow(&a, &b);
                 (
                     Reading {
+                        system: SOURCE_SYSTEM.into(),
+                        collector: SIMULATOR.into(),
                         kind: "sandbox.flow_check".into(),
                         subject: iv.target().clone(),
                         attributes: BTreeMap::from([
@@ -331,6 +340,8 @@ impl Sandbox {
             let valid = self.credential_valid(credential);
             return vec![(
                 Reading {
+                    system: SOURCE_SYSTEM.into(),
+                    collector: SIMULATOR.into(),
                     kind: "sandbox.auth_attempt".into(),
                     subject: credential.clone(),
                     attributes: BTreeMap::from([(
@@ -347,6 +358,8 @@ impl Sandbox {
                 let r = self.flow(&a, &b);
                 (
                     Reading {
+                        system: SOURCE_SYSTEM.into(),
+                        collector: SIMULATOR.into(),
                         kind: "sandbox.flow_check".into(),
                         subject: iv.target().clone(),
                         attributes: BTreeMap::from([
@@ -386,12 +399,71 @@ impl Sandbox {
         }
         (
             Reading {
+                system: SOURCE_SYSTEM.into(),
+                collector: SIMULATOR.into(),
                 kind: "sandbox.verification_probe".into(),
                 subject: iv.target().clone(),
                 attributes,
             },
             passed,
         )
+    }
+}
+
+/// Something that can carry out interventions and report what it sees.
+/// The sandbox is the only implementation that ships: a production actuator
+/// would implement this against real systems, and its results would be
+/// written to the incident itself rather than to a counterfactual branch.
+pub trait Actuator {
+    /// True if this actuator does not touch reality.
+    fn is_sandbox(&self) -> bool;
+    fn name(&self) -> String;
+    fn execute(&mut self, action: &ActionId, iv: &Intervention) -> Result<String, String>;
+    fn roll_back(&mut self, action: &ActionId) -> Result<String, String>;
+    fn is_active(&self, action: &ActionId) -> bool;
+    fn control_reading(&self, action: &ActionId, iv: &Intervention) -> Reading;
+    fn effect_readings(&self, iv: &Intervention) -> Vec<(Reading, bool)>;
+    fn restored_readings(&self, iv: &Intervention) -> Vec<(Reading, bool)>;
+    fn verification_probe(
+        &self,
+        action: &ActionId,
+        iv: &Intervention,
+        method: &str,
+    ) -> (Reading, bool);
+}
+
+impl Actuator for Sandbox {
+    fn is_sandbox(&self) -> bool {
+        true
+    }
+    fn name(&self) -> String {
+        SIMULATOR.into()
+    }
+    fn execute(&mut self, action: &ActionId, iv: &Intervention) -> Result<String, String> {
+        Sandbox::execute(self, action, iv)
+    }
+    fn roll_back(&mut self, action: &ActionId) -> Result<String, String> {
+        Sandbox::roll_back(self, action)
+    }
+    fn is_active(&self, action: &ActionId) -> bool {
+        Sandbox::is_active(self, action)
+    }
+    fn control_reading(&self, action: &ActionId, iv: &Intervention) -> Reading {
+        Sandbox::control_reading(self, action, iv)
+    }
+    fn effect_readings(&self, iv: &Intervention) -> Vec<(Reading, bool)> {
+        Sandbox::effect_readings(self, iv)
+    }
+    fn restored_readings(&self, iv: &Intervention) -> Vec<(Reading, bool)> {
+        Sandbox::restored_readings(self, iv)
+    }
+    fn verification_probe(
+        &self,
+        action: &ActionId,
+        iv: &Intervention,
+        method: &str,
+    ) -> (Reading, bool) {
+        Sandbox::verification_probe(self, action, iv, method)
     }
 }
 

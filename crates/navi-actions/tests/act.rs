@@ -348,3 +348,105 @@ fn runs_are_deterministic() {
     assert_eq!(a.branch, b.branch);
     assert_eq!(a.narrative, b.narrative);
 }
+
+// ── Production path (test-only actuator; none ships) ───────────────────────
+
+struct FakeProduction(navi_simulator::Sandbox);
+
+impl navi_simulator::Actuator for FakeProduction {
+    fn is_sandbox(&self) -> bool {
+        false
+    }
+    fn name(&self) -> String {
+        "fake-production (test only)".into()
+    }
+    fn execute(
+        &mut self,
+        a: &ActionId,
+        iv: &navi_simulator::Intervention,
+    ) -> Result<String, String> {
+        self.0.execute(a, iv)
+    }
+    fn roll_back(&mut self, a: &ActionId) -> Result<String, String> {
+        self.0.roll_back(a)
+    }
+    fn is_active(&self, a: &ActionId) -> bool {
+        self.0.is_active(a)
+    }
+    fn control_reading(
+        &self,
+        a: &ActionId,
+        iv: &navi_simulator::Intervention,
+    ) -> navi_simulator::Reading {
+        relabel(self.0.control_reading(a, iv))
+    }
+    fn effect_readings(
+        &self,
+        iv: &navi_simulator::Intervention,
+    ) -> Vec<(navi_simulator::Reading, bool)> {
+        self.0
+            .effect_readings(iv)
+            .into_iter()
+            .map(|(r, ok)| (relabel(r), ok))
+            .collect()
+    }
+    fn restored_readings(
+        &self,
+        iv: &navi_simulator::Intervention,
+    ) -> Vec<(navi_simulator::Reading, bool)> {
+        self.0
+            .restored_readings(iv)
+            .into_iter()
+            .map(|(r, ok)| (relabel(r), ok))
+            .collect()
+    }
+    fn verification_probe(
+        &self,
+        a: &ActionId,
+        iv: &navi_simulator::Intervention,
+        m: &str,
+    ) -> (navi_simulator::Reading, bool) {
+        let (r, ok) = self.0.verification_probe(a, iv, m);
+        (relabel(r), ok)
+    }
+}
+
+fn relabel(mut r: navi_simulator::Reading) -> navi_simulator::Reading {
+    r.system = "fake-production".into();
+    r
+}
+
+#[test]
+fn a_production_actuator_writes_to_the_incident_itself() {
+    let base = approved_isolation();
+    let mut actuator = FakeProduction(navi_simulator::Sandbox::from_graph(&base.graph().unwrap()));
+    let r = navi_actions::run_on(
+        &base,
+        &id("act:isolate"),
+        RunOptions::default(),
+        &mut actuator,
+    )
+    .unwrap();
+    assert!(r.in_reality);
+    assert!(
+        r.branch.branch.is_none(),
+        "production results are not counterfactual"
+    );
+    assert_eq!(
+        &r.branch.events[..base.events.len()],
+        &base.events[..],
+        "history is appended to, never rewritten"
+    );
+    assert_eq!(state(&r.branch, "act:isolate"), ActionState::Verified);
+    // The gates are identical: an unapproved action is refused here too.
+    let mut actuator = FakeProduction(navi_simulator::Sandbox::from_graph(
+        &log(REPO_LOG).graph().unwrap(),
+    ));
+    assert!(navi_actions::run_on(
+        &log(REPO_LOG),
+        &id("act:isolate"),
+        RunOptions::default(),
+        &mut actuator
+    )
+    .is_err());
+}

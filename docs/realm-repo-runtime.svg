@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1806" height="752" viewBox="0 0 1806 752" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="12">
-<desc>realm-grammar/0.1 · navi-ontology/0.3 · realm-compiler/0.2 · source sha256:889773a844c843f0fb1e99a11fa9b6ad975d25c8537ce0df8bb07a69783c3d5a</desc>
+<desc>realm-grammar/0.1 · navi-ontology/0.4 · realm-compiler/0.2 · source sha256:de7c192f123f7617c7bada4bb40e8834fe6c5604a199c00070f93030b0ff8a9a</desc>
 <rect x="0" y="0" width="1806" height="752" fill="#101418"/>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9d1d9"/></marker></defs>
-<text x="12" y="24" fill="#c9d1d9" font-size="14">REALM · sha256:889773a844c843f0fb1e99a11fa9b6ad975d25c8537ce0df8bb07a69783c3d5a · epoch t+4900ms</text>
+<text x="12" y="24" fill="#c9d1d9" font-size="14">REALM · sha256:de7c192f123f7617c7bada4bb40e8834fe6c5604a199c00070f93030b0ff8a9a · epoch t+4900ms</text>
 <g transform="translate(10,40)">
 <g data-realm-id="realm:universe"><rect x="0" y="0" width="1296" height="378" rx="6" fill="none" stroke="#3a4350" stroke-width="2"/><text x="8" y="13" fill="#8a8f98">U Universe — managed estate</text></g>
 <g data-realm-id="realm:ent:ext-203" data-source-ids="ent:ext-203" data-primitive="unknown_entity"><title>? 203.0.113.47

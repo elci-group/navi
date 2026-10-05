@@ -204,6 +204,7 @@ dependencies = [
  "navi-events",
  "navi-graph",
  "navi-ontology",
+ "navi-readiness",
  "navi-simulator",
  "serde",
  "serde_json",
@@ -239,6 +240,20 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "navi-readiness"
+version = "0.1.0"
+dependencies = [
+ "navi-actions",
+ "navi-events",
+ "navi-graph",
+ "navi-ontology",
+ "navi-simulator",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

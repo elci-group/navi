@@ -25,8 +25,11 @@ the next one starts.
 - [x] **Phase 5 — adaptive world generation.** `realm-lod`: attention-driven
       level of detail with aggregates and re-anchoring checked against
       concealment; IAM / network / supply-chain lenses chosen from data.
-- [ ] **Phase 6 — production autonomy.** Only after replay, provenance,
-      rollback, authority and verification have demonstrated reliability.
+- [x] **Phase 6 — production autonomy (gated).** `navi-readiness` (sandbox
+      trials, digest-bound certificates, human grants), ontology 0.4 (bounded
+      autonomy for low-risk expiring reversible containment only, human
+      interruption window, expiry), `navi act auto|expire`, `Actuator` trait.
+      No production actuator ships; connecting one is a deployment decision.
 
 All §26 acceptance criteria now have tests. Renderer independence is
 enforced by a test: `navi-*` crates never depend on `realm-*`. Still to

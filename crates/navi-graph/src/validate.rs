@@ -118,6 +118,57 @@ impl Grounder<'_> {
 }
 
 impl SemanticGraph {
+    /// Does a certificate-backed autonomous approval satisfy this gate?
+    /// Only for policy-dependent gates, only under a valid grant, only with
+    /// the grant's interruption window and duration bound respected.
+    pub fn autonomy_satisfies(
+        &self,
+        cap: &Capability,
+        appr: &Approval,
+        gate: Gate,
+        authorised_at: Option<Timestamp>,
+    ) -> Result<(), String> {
+        let ApprovalKind::Autonomous {
+            certificate: Some(cert),
+            ..
+        } = &appr.kind
+        else {
+            return Err("not a certificate-backed autonomous approval".into());
+        };
+        if gate != Gate::PolicyDependent {
+            return Err(format!("{gate:?} gates cannot be satisfied autonomously"));
+        }
+        let grant = self
+            .authority_policy
+            .grant_for(&cap.id)
+            .ok_or(format!("no autonomy grant for {}", cap.id))?;
+        grant.check(cap)?;
+        if &grant.certificate != cert {
+            return Err("certificate differs from the grant's".into());
+        }
+        let at = authorised_at.ok_or("not authorised")?;
+        match appr.not_before {
+            Some(nb) if nb.0 >= at.0 + grant.grace_ms => {}
+            _ => {
+                return Err(format!(
+                    "needs a {}ms human interruption window",
+                    grant.grace_ms
+                ))
+            }
+        }
+        let cap_end = match cap.expiry {
+            Expiry::At(e) => e,
+            Expiry::Never => return Err("capability never expires".into()),
+        };
+        match appr.expires_at {
+            Some(e) if e.0 <= at.0 + grant.max_duration_ms && e <= cap_end => Ok(()),
+            _ => Err(format!(
+                "must expire within {}ms and before the capability does",
+                grant.max_duration_ms
+            )),
+        }
+    }
+
     pub(crate) fn validate(&self) -> Vec<Violation> {
         let mut v = Vec::new();
         self.check_objects(&mut v);
@@ -126,7 +177,27 @@ impl SemanticGraph {
         self.check_epistemics(&mut v);
         self.check_capabilities_and_actions(&mut v);
         self.check_agent_events(&mut v);
+        self.check_grants(&mut v);
         v
+    }
+
+    fn check_grants(&self, v: &mut Vec<Violation>) {
+        for g in &self.authority_policy.autonomy {
+            let problem = match self.capabilities.get(&g.capability) {
+                None => Some(format!(
+                    "grants autonomy for {}, which does not exist",
+                    g.capability
+                )),
+                Some(c) => g.check(c).err(),
+            };
+            if let Some(m) = problem {
+                v.push(Violation::new(
+                    Code::AuthorityViolation,
+                    self.authority_policy.version.clone(),
+                    m,
+                ));
+            }
+        }
     }
 
     fn check_objects(&self, v: &mut Vec<Violation>) {
@@ -435,6 +506,11 @@ impl SemanticGraph {
             }
             if let Some(appr) = a.approval() {
                 let gate = self.effective_gate(cap);
+                let authorised_at = a.history.iter().find_map(|t| match t {
+                    ActionTransition::Authorise { at, .. } => Some(*at),
+                    _ => None,
+                });
+                let autonomy = self.autonomy_satisfies(cap, appr, gate, authorised_at);
                 let sufficient = matches!(
                     (&appr.kind, gate),
                     (_, Gate::Autonomous)
@@ -443,7 +519,20 @@ impl SemanticGraph {
                             Gate::PolicyDependent
                         )
                         | (ApprovalKind::Human { .. }, Gate::HumanApproval)
-                );
+                ) || autonomy.is_ok();
+                if let (
+                    ApprovalKind::Autonomous {
+                        certificate: Some(_),
+                        ..
+                    },
+                    Err(why),
+                ) = (&appr.kind, &autonomy)
+                {
+                    auth(
+                        &a.id,
+                        format!("autonomous approval not covered by a grant: {why}"),
+                    );
+                }
                 if !sufficient {
                     auth(
                         &a.id,
@@ -453,7 +542,25 @@ impl SemanticGraph {
                         ),
                     );
                 }
-                if let ApprovalKind::Autonomous { policy_version } = &appr.kind {
+                if let Some(nb) = appr.not_before {
+                    let began = a.history.iter().find_map(|t| match t {
+                        ActionTransition::BeginExecution { at } => Some(*at),
+                        _ => None,
+                    });
+                    if began.is_some_and(|b| b < nb) {
+                        auth(
+                            &a.id,
+                            format!(
+                                "executed inside the human interruption window (not before {nb})"
+                            ),
+                        );
+                    }
+                }
+                if let ApprovalKind::Autonomous {
+                    policy_version,
+                    certificate: None,
+                } = &appr.kind
+                {
                     if policy_version != &self.authority_policy.version {
                         auth(&a.id, format!("autonomous approval cites policy {policy_version:?}, document uses {:?}", self.authority_policy.version));
                     }

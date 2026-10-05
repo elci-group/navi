@@ -1,6 +1,6 @@
 {
   "log_version": "navi-log/0.1",
-  "ontology_version": "navi-ontology/0.3",
+  "ontology_version": "navi-ontology/0.4",
   "events": [
     {
       "seq": 1,
@@ -174,6 +174,33 @@
       "seq": 9,
       "at": 0,
       "event": {
+        "type": "capability_granted",
+        "capability": {
+          "id": "cap:shield",
+          "kind": "SHIELD",
+          "scope": [
+            "ent:payments"
+          ],
+          "target_classes": [
+            "endpoint"
+          ],
+          "authority": "temporary_containment",
+          "risk_class": "low",
+          "approval_requirement": "policy_dependent",
+          "rollback_method": {
+            "method": "delete the rate-limit rule"
+          },
+          "verification_method": "source traffic to the gateway is rate-limited",
+          "expiry": {
+            "at": 3600000
+          }
+        }
+      }
+    },
+    {
+      "seq": 10,
+      "at": 0,
+      "event": {
         "type": "agent_registered",
         "agent": {
           "id": "agent:navi-02",
@@ -182,13 +209,14 @@
           "loadout": [
             "cap:scan",
             "cap:lock",
-            "cap:barrier"
+            "cap:barrier",
+            "cap:shield"
           ]
         }
       }
     },
     {
-      "seq": 10,
+      "seq": 11,
       "at": 0,
       "event": {
         "type": "entity_asserted",
@@ -210,7 +238,7 @@
       }
     },
     {
-      "seq": 11,
+      "seq": 12,
       "at": 0,
       "event": {
         "type": "entity_asserted",
@@ -229,7 +257,7 @@
       }
     },
     {
-      "seq": 12,
+      "seq": 13,
       "at": 0,
       "event": {
         "type": "entity_asserted",
@@ -248,7 +276,7 @@
       }
     },
     {
-      "seq": 13,
+      "seq": 14,
       "at": 0,
       "event": {
         "type": "entity_asserted",
@@ -267,7 +295,7 @@
       }
     },
     {
-      "seq": 14,
+      "seq": 15,
       "at": 0,
       "event": {
         "type": "entity_asserted",
@@ -286,7 +314,7 @@
       }
     },
     {
-      "seq": 15,
+      "seq": 16,
       "at": 0,
       "event": {
         "type": "entity_asserted",
@@ -305,7 +333,7 @@
       }
     },
     {
-      "seq": 16,
+      "seq": 17,
       "at": 0,
       "event": {
         "type": "relationship_asserted",
@@ -323,7 +351,7 @@
       }
     },
     {
-      "seq": 17,
+      "seq": 18,
       "at": 0,
       "event": {
         "type": "relationship_asserted",
@@ -341,7 +369,7 @@
       }
     },
     {
-      "seq": 18,
+      "seq": 19,
       "at": 0,
       "event": {
         "type": "relationship_asserted",
@@ -359,7 +387,7 @@
       }
     },
     {
-      "seq": 19,
+      "seq": 20,
       "at": 0,
       "event": {
         "type": "relationship_asserted",
@@ -377,7 +405,7 @@
       }
     },
     {
-      "seq": 20,
+      "seq": 21,
       "at": 0,
       "event": {
         "type": "relationship_asserted",
@@ -395,7 +423,7 @@
       }
     },
     {
-      "seq": 21,
+      "seq": 22,
       "at": 0,
       "event": {
         "type": "relationship_asserted",
@@ -413,7 +441,7 @@
       }
     },
     {
-      "seq": 22,
+      "seq": 23,
       "at": 0,
       "event": {
         "type": "relationship_asserted",
@@ -431,7 +459,7 @@
       }
     },
     {
-      "seq": 23,
+      "seq": 24,
       "at": 0,
       "event": {
         "type": "safeguard_asserted",
@@ -452,7 +480,7 @@
       }
     },
     {
-      "seq": 24,
+      "seq": 25,
       "at": 1000,
       "event": {
         "type": "observation_recorded",
@@ -475,7 +503,7 @@
       }
     },
     {
-      "seq": 25,
+      "seq": 26,
       "at": 1000,
       "event": {
         "type": "entity_asserted",
@@ -494,7 +522,7 @@
       }
     },
     {
-      "seq": 26,
+      "seq": 27,
       "at": 1000,
       "event": {
         "type": "relationship_asserted",
@@ -512,7 +540,7 @@
       }
     },
     {
-      "seq": 27,
+      "seq": 28,
       "at": 1000,
       "event": {
         "type": "agent_event_emitted",
@@ -534,7 +562,7 @@
       }
     },
     {
-      "seq": 28,
+      "seq": 29,
       "at": 1100,
       "event": {
         "type": "agent_event_emitted",
@@ -556,7 +584,7 @@
       }
     },
     {
-      "seq": 29,
+      "seq": 30,
       "at": 1200,
       "event": {
         "type": "hypothesis_opened",
@@ -589,7 +617,7 @@
       }
     },
     {
-      "seq": 30,
+      "seq": 31,
       "at": 1200,
       "event": {
         "type": "threat_attributed",
@@ -605,7 +633,7 @@
       }
     },
     {
-      "seq": 31,
+      "seq": 32,
       "at": 1200,
       "event": {
         "type": "agent_event_emitted",
@@ -635,7 +663,7 @@
       }
     },
     {
-      "seq": 32,
+      "seq": 33,
       "at": 1800,
       "event": {
         "type": "observation_recorded",
@@ -660,7 +688,7 @@
       }
     },
     {
-      "seq": 33,
+      "seq": 34,
       "at": 1900,
       "event": {
         "type": "hypothesis_transitioned",
@@ -686,7 +714,7 @@
       }
     },
     {
-      "seq": 34,
+      "seq": 35,
       "at": 2500,
       "event": {
         "type": "observation_recorded",
@@ -706,7 +734,7 @@
       }
     },
     {
-      "seq": 35,
+      "seq": 36,
       "at": 2500,
       "event": {
         "type": "agent_event_emitted",
@@ -736,7 +764,7 @@
       }
     },
     {
-      "seq": 36,
+      "seq": 37,
       "at": 2600,
       "event": {
         "type": "hypothesis_transitioned",
@@ -762,7 +790,7 @@
       }
     },
     {
-      "seq": 37,
+      "seq": 38,
       "at": 2600,
       "event": {
         "type": "agent_event_emitted",
@@ -792,7 +820,7 @@
       }
     },
     {
-      "seq": 38,
+      "seq": 39,
       "at": 2700,
       "event": {
         "type": "action_proposed",
@@ -809,7 +837,7 @@
       }
     },
     {
-      "seq": 39,
+      "seq": 40,
       "at": 2700,
       "event": {
         "type": "agent_event_emitted",
@@ -833,7 +861,7 @@
       }
     },
     {
-      "seq": 40,
+      "seq": 41,
       "at": 2800,
       "event": {
         "type": "agent_event_emitted",
@@ -856,7 +884,7 @@
       }
     },
     {
-      "seq": 41,
+      "seq": 42,
       "at": 2900,
       "event": {
         "type": "action_proposed",
@@ -873,7 +901,7 @@
       }
     },
     {
-      "seq": 42,
+      "seq": 43,
       "at": 2900,
       "event": {
         "type": "agent_event_emitted",
@@ -897,7 +925,7 @@
       }
     },
     {
-      "seq": 43,
+      "seq": 44,
       "at": 3000,
       "event": {
         "type": "agent_event_emitted",
@@ -912,9 +940,50 @@
           "action": "act:block",
           "objective": "Contain misuse of ci-deploy-token",
           "next": {
-            "phase": "ACT",
-            "target": "ent:deploy-token",
-            "intent": "act once approved"
+            "phase": "PLAN",
+            "target": "ent:api-gw",
+            "intent": "propose throttling the gateway meanwhile"
+          }
+        }
+      }
+    },
+    {
+      "seq": 45,
+      "at": 3100,
+      "event": {
+        "type": "action_proposed",
+        "action": {
+          "id": "act:throttle",
+          "agent": "agent:navi-02",
+          "capability": "cap:shield",
+          "target": "ent:api-gw",
+          "hypothesis": "hyp:token-theft",
+          "rationale": "slow further probing while revocation and blocking await a human",
+          "expected_effect": "source traffic to the gateway is rate-limited",
+          "proposed_at": 3100
+        }
+      }
+    },
+    {
+      "seq": 46,
+      "at": 3100,
+      "event": {
+        "type": "agent_event_emitted",
+        "event": {
+          "agent": "agent:navi-02",
+          "seq": 10,
+          "at": 3100,
+          "phase": "PLAN",
+          "target": "ent:api-gw",
+          "reason": "propose rate-limiting the gateway while humans decide",
+          "hypothesis": "hyp:token-theft",
+          "authority": "propose",
+          "action": "act:throttle",
+          "objective": "Contain misuse of ci-deploy-token",
+          "next": {
+            "phase": "AUTHORISE",
+            "target": "ent:api-gw",
+            "intent": "seek policy approval (or a grant)"
           }
         }
       }

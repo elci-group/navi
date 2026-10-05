@@ -1,0 +1,19 @@
+[package]
+name = "navi-readiness"
+description = "Phase 6 gate: sandbox trials over an incident corpus, readiness certificates, and human autonomy grants."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+navi-ontology.workspace = true
+navi-graph.workspace = true
+navi-events.workspace = true
+navi-simulator.workspace = true
+navi-actions.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -1,5 +1,5 @@
 {
-  "ontology_version": "navi-ontology/0.3",
+  "ontology_version": "navi-ontology/0.4",
   "observations": [
     {
       "id": "obs:inv",
@@ -413,6 +413,26 @@
       },
       "verification_method": "blocked source receives 403",
       "expiry": "never"
+    },
+    {
+      "id": "cap:shield",
+      "kind": "SHIELD",
+      "scope": [
+        "ent:payments"
+      ],
+      "target_classes": [
+        "endpoint"
+      ],
+      "authority": "temporary_containment",
+      "risk_class": "low",
+      "approval_requirement": "policy_dependent",
+      "rollback_method": {
+        "method": "delete the rate-limit rule"
+      },
+      "verification_method": "source traffic to the gateway is rate-limited",
+      "expiry": {
+        "at": 3600000
+      }
     }
   ],
   "agents": [
@@ -423,7 +443,8 @@
       "loadout": [
         "cap:scan",
         "cap:lock",
-        "cap:barrier"
+        "cap:barrier",
+        "cap:shield"
       ]
     }
   ],
@@ -588,9 +609,26 @@
       "objective": "Contain misuse of ci-deploy-token",
       "action": "act:block",
       "next": {
-        "phase": "ACT",
-        "target": "ent:deploy-token",
-        "intent": "act once approved"
+        "phase": "PLAN",
+        "target": "ent:api-gw",
+        "intent": "propose throttling the gateway meanwhile"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 10,
+      "at": 3100,
+      "phase": "PLAN",
+      "reason": "propose rate-limiting the gateway while humans decide",
+      "authority": "propose",
+      "target": "ent:api-gw",
+      "objective": "Contain misuse of ci-deploy-token",
+      "hypothesis": "hyp:token-theft",
+      "action": "act:throttle",
+      "next": {
+        "phase": "AUTHORISE",
+        "target": "ent:api-gw",
+        "intent": "seek policy approval (or a grant)"
       }
     }
   ],
@@ -614,6 +652,16 @@
       "rationale": "source keeps probing with other credentials",
       "expected_effect": "198.51.100.23 receives 403",
       "proposed_at": 2900
+    },
+    {
+      "id": "act:throttle",
+      "agent": "agent:navi-02",
+      "capability": "cap:shield",
+      "target": "ent:api-gw",
+      "hypothesis": "hyp:token-theft",
+      "rationale": "slow further probing while revocation and blocking await a human",
+      "expected_effect": "source traffic to the gateway is rate-limited",
+      "proposed_at": 3100
     }
   ]
 }
