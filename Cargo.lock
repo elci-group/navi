@@ -238,6 +238,59 @@ dependencies = [
 ]
 
 [[package]]
+name = "realm-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "navi-graph",
+ "realm-compiler",
+ "realm-core",
+ "realm-layout",
+ "realm-render",
+ "serde_json",
+]
+
+[[package]]
+name = "realm-compiler"
+version = "0.1.0"
+dependencies = [
+ "navi-graph",
+ "navi-ontology",
+ "realm-core",
+ "realm-layout",
+ "realm-render",
+ "serde_json",
+]
+
+[[package]]
+name = "realm-core"
+version = "0.1.0"
+dependencies = [
+ "navi-ontology",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "realm-layout"
+version = "0.1.0"
+dependencies = [
+ "navi-ontology",
+ "realm-core",
+ "serde",
+]
+
+[[package]]
+name = "realm-render"
+version = "0.1.0"
+dependencies = [
+ "navi-ontology",
+ "realm-core",
+ "realm-layout",
+ "serde_json",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"

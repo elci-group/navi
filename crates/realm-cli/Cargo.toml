@@ -1,0 +1,24 @@
+[package]
+name = "realm-cli"
+description = "realm: compile, check and render the cyber-realm."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "realm"
+path = "src/main.rs"
+
+[dependencies]
+navi-graph.workspace = true
+realm-core.workspace = true
+realm-compiler.workspace = true
+realm-layout.workspace = true
+realm-render.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+realm-core.workspace = true
+realm-layout.workspace = true

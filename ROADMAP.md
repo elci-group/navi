@@ -6,9 +6,10 @@ the next one starts.
 - [x] **Phase 0 — ontology.** `navi-ontology`, `navi-graph`, `navi-cli`.
       Covers entity, relationship, observation, hypothesis, confidence,
       threat, safeguard, agent, capability, action, authority, provenance.
-- [ ] **Phase 1 — deterministic 2D realm.** `realm-core` (versioned realm
-      grammar, §3), `realm-compiler` (graph → RIR, §4), a first 2D/CLI
-      renderer. One repository + one runtime environment.
+- [x] **Phase 1 — deterministic 2D realm.** `realm-core` (versioned realm
+      grammar §3, RIR §4, renderer-side validator §19), `realm-compiler`,
+      `realm-layout`, `realm-render` (text + SVG), `realm-cli`. Scenario:
+      one repository + one runtime environment.
 - [ ] **Phase 2 — Navi traversal.** Agent attention drives movement;
       selecting Navi explains where/why/what/confidence/next (§8 HUD).
 - [ ] **Phase 3 — replay.** Event-sourced log, snapshot + ordered deltas,
@@ -20,6 +21,6 @@ the next one starts.
 - [ ] **Phase 6 — production autonomy.** Only after replay, provenance,
       rollback, authority and verification have demonstrated reliability.
 
-Acceptance criteria (§26) still open after Phase 0: replay fidelity
-(Phase 3), renderer independence (Phase 1 onward: the realm must stay a
-consumer of `navi-graph`, never a dependency of it).
+Acceptance criteria (§26) still open after Phase 1: replay fidelity
+(Phase 3). Renderer independence is enforced by a test: `navi-*` crates
+never depend on `realm-*`.

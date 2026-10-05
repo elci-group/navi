@@ -1,0 +1,16 @@
+[package]
+name = "realm-compiler"
+description = "Compiles a validated navi-graph SemanticGraph into Realm IR. Pure and deterministic."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+navi-ontology.workspace = true
+navi-graph.workspace = true
+realm-core.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+realm-render.workspace = true
+realm-layout.workspace = true

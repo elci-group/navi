@@ -1,6 +1,15 @@
 [workspace]
 resolver = "2"
-members = ["crates/navi-ontology", "crates/navi-graph", "crates/navi-cli"]
+members = [
+    "crates/navi-ontology",
+    "crates/navi-graph",
+    "crates/navi-cli",
+    "crates/realm-core",
+    "crates/realm-compiler",
+    "crates/realm-layout",
+    "crates/realm-render",
+    "crates/realm-cli",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -16,3 +25,7 @@ sha2 = "0.10"
 clap = { version = "4", features = ["derive"] }
 navi-ontology = { path = "crates/navi-ontology" }
 navi-graph = { path = "crates/navi-graph" }
+realm-core = { path = "crates/realm-core" }
+realm-compiler = { path = "crates/realm-compiler" }
+realm-layout = { path = "crates/realm-layout" }
+realm-render = { path = "crates/realm-render" }

@@ -9,8 +9,18 @@ embodied, observable presence.
 machine state → semantic state → spatial state → human perception
 ```
 
-**Status: Phase 0 (ontology) complete.** There is no renderer yet, by
-design: the directive's MVP builds the semantic layer first.
+**Status: Phase 1 (deterministic 2D realm) complete.** Phase 0 built the
+semantic layer; Phase 1 projects it into a spatial realm with a terminal and
+an SVG renderer.
+
+![The repo + runtime scenario rendered as a realm](docs/realm-repo-runtime.svg)
+
+*`tests/fixtures/scenarios/repo-runtime.json`: a delivery region (repo,
+branch, CI, artifact, registry) and a production region (ingress, services,
+pods, database). Navi is attending to `api-5d2b-2`, whose unattributed
+outbound connection is `SUSPICIOUS` at 55% — rendered as `?`, not as an
+enemy — and its proposed `ISOLATE` waits on human approval. Hover any
+element for its provenance.*
 
 ## What exists
 
@@ -19,6 +29,14 @@ design: the directive's MVP builds the semantic layer first.
 | `navi-ontology` | The canonical vocabulary: observations, entities, relationships, hypotheses, threats, safeguards, capabilities, authority, agents, actions, provenance, confidence. Each type enforces its own invariants on construction **and** on deserialization. |
 | `navi-graph` | The semantic state graph. Validates a whole document (references, provenance grounding, authority fidelity, agent event stream), produces a canonical form + `sha256` digest, and reverse-resolves any object to raw observations. |
 | `navi-cli` | The `navi` binary. |
+| `realm-core` | The versioned realm grammar (§3), Realm IR (§4), visual contracts, and the validator every renderer must pass. |
+| `realm-compiler` | `SemanticGraph → Realm`. Pure and deterministic; no security reasoning of its own. |
+| `realm-layout` | Deterministic 2D containment layout on an integer grid. |
+| `realm-render` | Disposable renderers: terminal text and standalone SVG. No security logic. |
+| `realm-cli` | The `realm` binary. |
+
+`navi-*` crates never depend on `realm-*` (enforced by a test): Navi runs
+with the renderer absent.
 
 ## Invariants enforced today
 
@@ -34,6 +52,19 @@ design: the directive's MVP builds the semantic layer first.
 | §26 Determinism | Canonical form is independent of input order and is a fixed point; the digest changes iff semantics change. |
 | §26 Graceful incompleteness | Missing telemetry yields explicit violations; `unknown` is a first-class entity class and trust state. Threat actors may be absent (renders as `?`, never invented). |
 
+## Realm invariants (Phase 1)
+
+| Directive clause | Enforcement |
+|---|---|
+| §3 Stable grammar | Every primitive's meaning is fixed in `realm-grammar/0.1`; renderers refuse realms of any other grammar or ontology version. Colours are semantic tokens with one palette per grammar version. |
+| §4 Renderer cannot invent semantics | `Realm::validate` recomputes every primitive *and* every visual contract from the semantics carried beside it. A forged enemy, a prettified trust colour, an inflated confidence label, or a hidden boundary crossing is refused, and the renderers draw nothing. |
+| §5 No pixel without provenance | Every realm id derives from its primary source id; every SVG element carries `data-source-ids` and a `<title>` with its provenance. Tests resolve every realm object back to raw observations. |
+| §6 Epistemic rendering | Hazards are fog below `ANOMALOUS`, `?` unknown entities through `SUSPICIOUS`, and enemies only from `PROBABLE`; below that the claim is shown as a question (`c2_beacon?`). Confidence is shown exactly with its estimator. Unattributed threats have actor `?`. |
+| §7 / §8 Agent | Navi's position, phase, belief and confidence come only from structured agent events, each cited in `source_ids`; the HUD shows bounded telemetry, not reasoning text. |
+| §10 Authority fidelity | The HUD lists exactly the loadout with each capability's effective gate; showing an action outside the loadout, or a reality-mutating capability as autonomous, is refused. |
+| §26 Determinism | Same state + same compiler version gives byte-identical RIR, layout and SVG, independent of input order. |
+| §26 Graceful incompleteness | Unplaced entities sit outside the estate instead of being guessed into it; stale entities are dashed and marked; controls whose enforcement wasn't observed don't count as guarding anything. |
+
 ## Usage
 
 ```sh
@@ -48,6 +79,15 @@ navi policy
 
 `--json` is available on `validate` and `explain`.
 
+```sh
+realm render tests/fixtures/scenarios/repo-runtime.json            # terminal map + HUD
+realm render tests/fixtures/scenarios/repo-runtime.json -f svg -o realm.svg
+realm compile <state.json> -o realm.json   # Realm IR
+realm check realm.json                     # what a renderer checks before drawing
+realm render realm.json                    # renders RIR or state documents
+realm grammar                              # the §3 grammar table
+```
+
 `navi explain … thr:stuffing` descends enemy → hypothesis → evidence → raw
 observation (directive §26, reverse resolution):
 
@@ -58,7 +98,7 @@ observation (directive §26, reverse resolution):
     ├── ...
 ```
 
-## Deliberate Phase 0 limits
+## Deliberate limits so far
 
 - ATT&CK / D3FEND references are **shape-validated only**. No technique
   catalogue ships, because inventing names for ids would itself be
@@ -69,6 +109,10 @@ observation (directive §26, reverse resolution):
 - Documents are validated whole. The event-sourced log with snapshot +
   delta streaming (§15, §22) is Phase 3.
 - STIX import/export does not exist yet.
+- The realm is a snapshot: Navi does not yet move through it over time
+  (Phase 2), and there is no replay (Phase 3).
+- An entity with several `contains` parents is nested under the first by
+  relationship id; edges are drawn centre-to-centre without routing.
 
 ## Roadmap
 
@@ -77,9 +121,11 @@ See [`ROADMAP.md`](ROADMAP.md).
 ## Testing
 
 ```sh
-cargo test                                   # 78 tests
+cargo test                                   # 113 tests
 cargo clippy --all-targets -- -D warnings
 ```
 
-Acceptance tests (`crates/navi-graph/tests/acceptance.rs`) each start from
-the valid scenario and inject exactly one fault.
+Acceptance tests (`crates/navi-graph/tests/acceptance.rs`,
+`crates/realm-compiler/tests/phase1.rs`) each start from a valid scenario
+and inject exactly one fault — into the semantic graph for Phase 0, into
+compiled Realm IR for Phase 1.

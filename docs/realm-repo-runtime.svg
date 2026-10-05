@@ -1,0 +1,266 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1806" height="752" viewBox="0 0 1806 752" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="12">
+<desc>realm-grammar/0.1 · navi-ontology/0.1 · realm-compiler/0.1 · source sha256:803b031e9d3ed463e158387993923889217ee885dcb65c6cdf57e9e04147c33a</desc>
+<rect x="0" y="0" width="1806" height="752" fill="#101418"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c9d1d9"/></marker></defs>
+<text x="12" y="24" fill="#c9d1d9" font-size="14">REALM · sha256:803b031e9d3ed463e158387993923889217ee885dcb65c6cdf57e9e04147c33a · epoch t+4900ms</text>
+<g transform="translate(10,40)">
+<g data-realm-id="realm:universe"><rect x="0" y="0" width="1296" height="378" rx="6" fill="none" stroke="#3a4350" stroke-width="2"/><text x="8" y="13" fill="#8a8f98">U Universe — managed estate</text></g>
+<g data-realm-id="realm:ent:ext-203" data-source-ids="ent:ext-203" data-primitive="unknown_entity"><title>? 203.0.113.47
+unknown_entity — insufficiently classified actor
+class external_actor · trust unknown
+realm id realm:ent:ext-203
+sources ent:ext-203
+provenance [{&quot;observation&quot;:&quot;obs:egress-1&quot;}]</title><rect x="1120" y="18" width="160" height="90" rx="4" fill="#9aa0a6" fill-opacity="0.22" stroke="#8e5cc8" stroke-width="1.2" stroke-dasharray="6 4"/>
+<text x="1128" y="32" fill="#9aa0a6">? 203.0.113.47</text>
+<text x="1128" y="50" fill="#8a8f98" font-size="10">trust?</text>
+</g>
+<g data-realm-id="realm:ent:org" data-source-ids="ent:org" data-primitive="world"><title>W elci
+world — organisation / trust authority
+class organisation · trust trusted
+realm id realm:ent:org
+sources ent:org
+provenance [{&quot;observation&quot;:&quot;obs:org-inv&quot;}]</title><rect x="16" y="18" width="1088" height="342" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="2.5"/>
+<text x="24" y="31"><tspan fill="#2f8f5b">W elci</tspan><tspan fill="#8a8f98" font-size="10">  ok</tspan></text>
+</g>
+<g data-realm-id="realm:ent:delivery" data-source-ids="ent:delivery" data-primitive="region"><title>R delivery
+region — environment / major security zone
+class environment · trust trusted
+realm id realm:ent:delivery
+sources ent:delivery
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;},{&quot;observation&quot;:&quot;obs:gh-inv&quot;}]</title><rect x="32" y="36" width="400" height="306" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="2.5"/>
+<text x="40" y="49"><tspan fill="#2f8f5b">R delivery</tspan><tspan fill="#8a8f98" font-size="10">  ok</tspan></text>
+</g>
+<g data-realm-id="realm:ent:prod" data-source-ids="ent:prod" data-primitive="region"><title>R prod
+region — environment / major security zone
+class environment · trust trusted
+realm id realm:ent:prod
+sources ent:prod
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="448" y="36" width="640" height="306" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="2.5"/>
+<text x="456" y="49"><tspan fill="#2f8f5b">R prod</tspan><tspan fill="#8a8f98" font-size="10">  ok</tspan></text>
+</g>
+<g data-realm-id="realm:ent:ci" data-source-ids="ent:ci" data-primitive="building"><title>B release.yml
+building — host / application / substantial workload
+class pipeline · trust trusted
+realm id realm:ent:ci
+sources ent:ci
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;}]</title><rect x="48" y="198" width="200" height="126" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="56" y="211"><tspan fill="#2f8f5b">B release.yml</tspan><tspan fill="#8a8f98" font-size="10">  ok</tspan></text>
+</g>
+<g data-realm-id="realm:ent:registry" data-source-ids="ent:registry" data-primitive="building"><title>B ghcr.io/elci
+building — host / application / substantial workload
+class registry · trust trusted
+realm id realm:ent:registry
+sources ent:registry
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;}]</title><rect x="256" y="54" width="160" height="90" rx="4" fill="#2f8f5b" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="264" y="68" fill="#2f8f5b">B ghcr.io/elci</text>
+<text x="264" y="86" fill="#8a8f98" font-size="10">ok</text>
+</g>
+<g data-realm-id="realm:ent:repo" data-source-ids="ent:repo" data-primitive="building"><title>B elci/shop
+building — host / application / substantial workload
+class repository · trust trusted
+realm id realm:ent:repo
+sources ent:repo
+provenance [{&quot;observation&quot;:&quot;obs:gh-inv&quot;}]</title><rect x="48" y="54" width="192" height="126" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="56" y="67"><tspan fill="#2f8f5b">B elci/shop</tspan><tspan fill="#8a8f98" font-size="10">  ok</tspan></text>
+</g>
+<g data-realm-id="realm:ent:shop" data-source-ids="ent:shop" data-primitive="district"><title>D shop
+district — domain / subnet / cluster / service family
+class cluster · trust trusted
+realm id realm:ent:shop
+sources ent:shop
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="464" y="54" width="608" height="270" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="2.5"/>
+<text x="472" y="67"><tspan fill="#2f8f5b">D shop</tspan><tspan fill="#8a8f98" font-size="10">  ok #?</tspan></text>
+</g>
+<g data-realm-id="realm:ent:api" data-source-ids="ent:api" data-primitive="building"><title>B api
+building — host / application / substantial workload
+class service · trust trusted
+realm id realm:ent:api
+sources ent:api
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="480" y="72" width="368" height="126" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="488" y="85"><tspan fill="#2f8f5b">B api</tspan><tspan fill="#8a8f98" font-size="10">  ok #</tspan></text>
+</g>
+<g data-realm-id="realm:ent:artifact" data-source-ids="ent:artifact" data-primitive="object"><title>o shop-api:1.42.0
+object — resource / artefact
+class artifact · trust trusted
+realm id realm:ent:artifact
+sources ent:artifact
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;}]</title><rect x="64" y="216" width="168" height="90" rx="4" fill="#2f8f5b" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="72" y="230" fill="#2f8f5b">o shop-api:1.42.0</text>
+<text x="72" y="248" fill="#8a8f98" font-size="10">ok</text>
+</g>
+<g data-realm-id="realm:ent:branch-main" data-source-ids="ent:branch-main" data-primitive="room"><title>r main
+room — process / container / component
+class branch · trust unverified
+realm id realm:ent:branch-main
+sources ent:branch-main
+provenance [{&quot;observation&quot;:&quot;obs:gh-inv&quot;}]</title><rect x="64" y="72" width="160" height="90" rx="4" fill="#6f8fa8" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="72" y="86" fill="#6f8fa8">r main</text>
+<text x="72" y="104" fill="#8a8f98" font-size="10">unv #</text>
+<text x="72" y="122" fill="#b8bec6" font-size="10">~UNEXPLAINED</text>
+</g>
+<g data-realm-id="realm:ent:ingress" data-source-ids="ent:ingress" data-primitive="portal"><title>P shop-ingress
+portal — API / ingress / integration
+class endpoint · trust trusted
+realm id realm:ent:ingress
+sources ent:ingress
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="480" y="216" width="160" height="90" rx="4" fill="#2f8f5b" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="488" y="230" fill="#2f8f5b">P shop-ingress</text>
+<text x="488" y="248" fill="#8a8f98" font-size="10">ok</text>
+</g>
+<g data-realm-id="realm:ent:orders-db" data-source-ids="ent:orders-db" data-primitive="vault"><title>V orders-db
+vault — sensitive data store
+class data_store · trust trusted
+realm id realm:ent:orders-db
+sources ent:orders-db
+provenance [{&quot;observation&quot;:&quot;obs:db-auth-cfg&quot;},{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="656" y="216" width="160" height="90" rx="4" fill="#2f8f5b" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="664" y="230" fill="#2f8f5b">V orders-db</text>
+<text x="664" y="248" fill="#8a8f98" font-size="10">ok +</text>
+</g>
+<g data-realm-id="realm:ent:web" data-source-ids="ent:web" data-primitive="building"><title>B web
+building — host / application / substantial workload
+class service · trust trusted
+realm id realm:ent:web
+sources ent:web
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="864" y="72" width="192" height="126" rx="4" fill="#2f8f5b" fill-opacity="0.07" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="872" y="85"><tspan fill="#2f8f5b">B web</tspan><tspan fill="#8a8f98" font-size="10">  ok</tspan></text>
+</g>
+<g data-realm-id="realm:ent:api-pod-1" data-source-ids="ent:api-pod-1" data-primitive="room"><title>r api-5d2b-1
+room — process / container / component
+class container · trust trusted
+realm id realm:ent:api-pod-1
+sources ent:api-pod-1
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="496" y="90" width="160" height="90" rx="4" fill="#2f8f5b" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="504" y="104" fill="#2f8f5b">r api-5d2b-1</text>
+<text x="504" y="122" fill="#8a8f98" font-size="10">ok</text>
+</g>
+<g data-realm-id="realm:ent:api-pod-2" data-source-ids="ent:api-pod-2" data-primitive="room"><title>r api-5d2b-2
+room — process / container / component
+class container · trust unverified
+realm id realm:ent:api-pod-2
+sources ent:api-pod-2
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><rect x="672" y="90" width="160" height="90" rx="4" fill="#6f8fa8" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2"/>
+<text x="680" y="104" fill="#6f8fa8">r api-5d2b-2</text>
+<text x="680" y="122" fill="#8a8f98" font-size="10">@ unv</text>
+<text x="680" y="140" fill="#8e5cc8" font-size="10">?SUSPICIOUS</text>
+</g>
+<g data-realm-id="realm:ent:web-pod-1" data-source-ids="ent:web-pod-1" data-primitive="room"><title>r web-7f9c-1
+room — process / container / component
+class container · trust trusted
+realm id realm:ent:web-pod-1
+sources ent:web-pod-1
+provenance [{&quot;observation&quot;:&quot;obs:pod-web-1&quot;}]</title><rect x="880" y="90" width="160" height="90" rx="4" fill="#2f8f5b" fill-opacity="0.22" stroke="#8a8f98" stroke-width="1.2" stroke-dasharray="6 4"/>
+<text x="888" y="104" fill="#2f8f5b">r web-7f9c-1</text>
+<text x="888" y="122" fill="#8a8f98" font-size="10">ok stale</text>
+</g>
+<g data-realm-id="realm:rel:api-db" data-source-ids="rel:api-db" data-primitive="road"><title>road api → orders-db
+depends_on — permitted communication relationship
+sources rel:api-db
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><path d="M664,126 Q700,213 736,252" fill="none" stroke="#5d6672" stroke-width="1.2" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:api-db-auth" data-source-ids="rel:api-db-auth" data-primitive="door"><title>door api → orders-db
+authenticates_to — authenticated access boundary
+sources rel:api-db-auth
+provenance [{&quot;observation&quot;:&quot;obs:db-auth-cfg&quot;}]</title><path d="M664,126 Q700,213 736,252" fill="none" stroke="#2b6cd4" stroke-width="1.2" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:artifact-deploys" data-source-ids="rel:artifact-deploys" data-primitive="teleport"><title>teleport shop-api:1.42.0 → api
+deploys_to — non-topological logical transition
+sources rel:artifact-deploys
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;},{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><path d="M144,252 Q404,213 664,126" fill="none" stroke="#8e5cc8" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:ci-builds-repo" data-source-ids="rel:ci-builds-repo" data-primitive="teleport"><title>teleport release.yml → elci/shop
+builds_from — non-topological logical transition
+sources rel:ci-builds-repo
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;}]</title><path d="M144,252 Q144,204 144,108" fill="none" stroke="#8e5cc8" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:ci-produces" data-source-ids="rel:ci-produces" data-primitive="teleport"><title>teleport release.yml → shop-api:1.42.0
+produces — non-topological logical transition
+sources rel:ci-produces
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;}]</title><path d="M144,252 Q144,276 144,252" fill="none" stroke="#8e5cc8" stroke-width="1.2" stroke-dasharray="6 4" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:ingress-web" data-source-ids="rel:ingress-web" data-primitive="road"><title>road shop-ingress → web
+communicates_with — permitted communication relationship
+sources rel:ingress-web
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;}]</title><path d="M560,252 Q760,213 960,126" fill="none" stroke="#5d6672" stroke-width="1.2" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:pod2-egress" data-source-ids="rel:pod2-egress" data-primitive="bridge"><title>bridge api-5d2b-2 → 203.0.113.47
+communicates_with — cross-boundary dependency
+sources rel:pod2-egress
+provenance [{&quot;observation&quot;:&quot;obs:egress-1&quot;}]</title><path d="M752,126 Q976,114 1200,54" fill="none" stroke="#3a4350" stroke-width="2.5" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:registry-stores" data-source-ids="rel:registry-stores" data-primitive="road"><title>road ghcr.io/elci → shop-api:1.42.0
+stores — permitted communication relationship
+sources rel:registry-stores
+provenance [{&quot;observation&quot;:&quot;obs:ci-inv&quot;}]</title><path d="M336,90 Q240,195 144,252" fill="none" stroke="#5d6672" stroke-width="1.2" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:rel:web-api" data-source-ids="rel:web-api" data-primitive="road"><title>road web → api
+communicates_with — permitted communication relationship
+sources rel:web-api
+provenance [{&quot;observation&quot;:&quot;obs:k8s-inv&quot;},{&quot;observation&quot;:&quot;obs:netpol-cfg&quot;}]</title><path d="M960,126 Q812,150 664,126" fill="none" stroke="#5d6672" stroke-width="1.2" marker-end="url(#arrow)" opacity="0.85"/></g>
+<g data-realm-id="realm:sg:admission" data-source-ids="sg:admission" data-primitive="wall"><title>wall policy-gate (unknown)
+policy / ACL / firewall
+sources sg:admission
+provenance [{&quot;observation&quot;:&quot;obs:admission-cfg&quot;}]</title><rect x="461" y="51" width="614" height="276" rx="5" fill="none" stroke="#7d8fb3" stroke-width="3" stroke-opacity="0.8" stroke-dasharray="6 4"/><text x="1058" y="320" fill="#7d8fb3" font-size="11">#</text></g>
+<g data-realm-id="realm:sg:branch-protection" data-source-ids="sg:branch-protection" data-primitive="wall"><title>wall main protection (active)
+policy / ACL / firewall
+sources sg:branch-protection
+provenance [{&quot;observation&quot;:&quot;obs:branch-prot&quot;}]</title><rect x="61" y="69" width="166" height="96" rx="5" fill="none" stroke="#2b6cd4" stroke-width="3" stroke-opacity="0.8"/><text x="210" y="158" fill="#2b6cd4" font-size="11">#</text></g>
+<g data-realm-id="realm:sg:db-auth" data-source-ids="sg:db-auth" data-primitive="door"><title>door scram auth (active)
+authenticated access boundary
+sources sg:db-auth
+provenance [{&quot;observation&quot;:&quot;obs:db-auth-cfg&quot;}]</title><rect x="653" y="213" width="166" height="96" rx="5" fill="none" stroke="#2b6cd4" stroke-width="3" stroke-opacity="0.8"/><text x="802" y="302" fill="#2b6cd4" font-size="11">+</text></g>
+<g data-realm-id="realm:sg:netpol" data-source-ids="sg:netpol" data-primitive="wall"><title>wall api-ingress-only (active)
+policy / ACL / firewall
+sources sg:netpol
+provenance [{&quot;observation&quot;:&quot;obs:netpol-cfg&quot;}]</title><rect x="477" y="69" width="374" height="132" rx="5" fill="none" stroke="#2b6cd4" stroke-width="3" stroke-opacity="0.8"/><text x="834" y="194" fill="#2b6cd4" font-size="11">#</text></g>
+<g data-realm-id="realm:hyp:c2" data-source-ids="hyp:c2, thr:c2" data-primitive="unknown_entity"><title>c2_beacon? SUSPICIOUS 55%
+unknown_entity — insufficiently classified actor
+view unknown_entity · estimator egress-anomaly@0.2
+actor ?
+sources hyp:c2, thr:c2
+evidence [{&quot;observation&quot;:&quot;obs:egress-1&quot;},{&quot;observation&quot;:&quot;obs:proc-ancestry&quot;}]</title><circle cx="818" cy="102" r="9" fill="#8e5cc8" fill-opacity="0.45" stroke="#8e5cc8" stroke-width="1.5" stroke-dasharray="6 4"/><text x="818" y="106" text-anchor="middle" fill="#ffffff" font-weight="bold">?</text></g>
+<g data-realm-id="realm:hyp:dep-drift" data-source-ids="hyp:dep-drift" data-primitive="fog"><title>unreviewed_dependency_change? UNEXPLAINED 20%
+fog — epistemic uncertainty
+view silhouette · estimator supply-chain-drift@0.1
+actor ?
+sources hyp:dep-drift
+evidence [{&quot;observation&quot;:&quot;obs:dep-change&quot;}]</title><circle cx="210" cy="84" r="9" fill="#b8bec6" fill-opacity="0.45" stroke="#b8bec6" stroke-width="1.5" stroke-dasharray="2 3"/><text x="210" y="88" text-anchor="middle" fill="#ffffff" font-weight="bold">~</text></g>
+<g data-realm-id="realm:agent:navi-01" data-source-ids="agent:navi-01, agent:navi-01#7, agent:navi-01#6, agent:navi-01#5" data-primitive="navi"><title>NAVI / LC-DEFENCE-01  (hunter)
+  PHASE      AUTHORISE  at t+4900ms
+  TARGET     elci → prod → shop → api → api-5d2b-2
+  REASON     network isolation requires human approval; escalated
+  HYPOTHESIS c2_beacon?  SUSPICIOUS
+  ATT&amp;CK     TA0011
+  CONFIDENCE 55%  (egress-anomaly@0.2)
+  EXERCISING propose
+  LOADOUT
+    SCAN     query                    autonomous
+    TRACE    correlate                autonomous
+    ISOLATE  network_isolation        HUMAN APPROVAL REQUIRED
+  ACTIONS
+    ISOLATE → api-5d2b-2  PROPOSED  (awaiting authorisation)</title><circle cx="676" cy="94" r="10" fill="#14a6d9" stroke="#ffffff" stroke-width="1.5"/><text x="676" y="98" text-anchor="middle" fill="#ffffff" font-weight="bold">@</text></g>
+</g>
+<text x="1326" y="52" fill="#14a6d9" xml:space="preserve">NAVI / LC-DEFENCE-01  (hunter)</text>
+<text x="1326" y="68" fill="#c9d1d9" xml:space="preserve">  PHASE      AUTHORISE  at t+4900ms</text>
+<text x="1326" y="84" fill="#c9d1d9" xml:space="preserve">  TARGET     elci → prod → shop → api → api-5d2b-2</text>
+<text x="1326" y="100" fill="#c9d1d9" xml:space="preserve">  REASON     network isolation requires human approval; escalated</text>
+<text x="1326" y="116" fill="#c9d1d9" xml:space="preserve">  HYPOTHESIS c2_beacon?  SUSPICIOUS</text>
+<text x="1326" y="132" fill="#c9d1d9" xml:space="preserve">  ATT&amp;CK     TA0011</text>
+<text x="1326" y="148" fill="#c9d1d9" xml:space="preserve">  CONFIDENCE 55%  (egress-anomaly@0.2)</text>
+<text x="1326" y="164" fill="#c9d1d9" xml:space="preserve">  EXERCISING propose</text>
+<text x="1326" y="180" fill="#c9d1d9" xml:space="preserve">  LOADOUT</text>
+<text x="1326" y="196" fill="#c9d1d9" xml:space="preserve">    SCAN     query                    autonomous</text>
+<text x="1326" y="212" fill="#c9d1d9" xml:space="preserve">    TRACE    correlate                autonomous</text>
+<text x="1326" y="228" fill="#e0a030" xml:space="preserve">    ISOLATE  network_isolation        HUMAN APPROVAL REQUIRED</text>
+<text x="1326" y="244" fill="#c9d1d9" xml:space="preserve">  ACTIONS</text>
+<text x="1326" y="260" fill="#c9d1d9" xml:space="preserve">    ISOLATE → api-5d2b-2  PROPOSED  (awaiting authorisation)</text>
+<text x="12" y="442" fill="#8a8f98">LEGEND · realm-grammar/0.1</text>
+<text x="20" y="458" fill="#c9d1d9" xml:space="preserve">U  universe        managed estate</text>
+<text x="20" y="474" fill="#c9d1d9" xml:space="preserve">W  world           organisation / trust authority</text>
+<text x="20" y="490" fill="#c9d1d9" xml:space="preserve">R  region          environment / major security zone</text>
+<text x="20" y="506" fill="#c9d1d9" xml:space="preserve">D  district        domain / subnet / cluster / service family</text>
+<text x="20" y="522" fill="#c9d1d9" xml:space="preserve">B  building        host / application / substantial workload</text>
+<text x="20" y="538" fill="#c9d1d9" xml:space="preserve">r  room            process / container / component</text>
+<text x="20" y="554" fill="#c9d1d9" xml:space="preserve">-  road            permitted communication relationship</text>
+<text x="20" y="570" fill="#c9d1d9" xml:space="preserve">=  bridge          cross-boundary dependency</text>
+<text x="20" y="586" fill="#c9d1d9" xml:space="preserve">P  portal          API / ingress / integration</text>
+<text x="20" y="602" fill="#c9d1d9" xml:space="preserve">+  door            authenticated access boundary</text>
+<text x="20" y="618" fill="#c9d1d9" xml:space="preserve">#  wall            policy / ACL / firewall</text>
+<text x="20" y="634" fill="#c9d1d9" xml:space="preserve">o  object          resource / artefact</text>
+<text x="20" y="650" fill="#c9d1d9" xml:space="preserve">V  vault           sensitive data store</text>
+<text x="20" y="666" fill="#c9d1d9" xml:space="preserve">?  unknown_entity  insufficiently classified actor</text>
+<text x="20" y="682" fill="#c9d1d9" xml:space="preserve">~  fog             epistemic uncertainty</text>
+<text x="20" y="698" fill="#c9d1d9" xml:space="preserve">@  navi            defensive autonomous agent</text>
+<text x="20" y="714" fill="#c9d1d9" xml:space="preserve">&gt;  teleport        non-topological logical transition</text>
+</svg>

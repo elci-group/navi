@@ -1,0 +1,12 @@
+[package]
+name = "realm-render"
+description = "Disposable renderers for Realm IR: text (terminal) and SVG. No security logic."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+navi-ontology.workspace = true
+realm-core.workspace = true
+realm-layout.workspace = true
+serde_json.workspace = true

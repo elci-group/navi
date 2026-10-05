@@ -1,0 +1,11 @@
+[package]
+name = "realm-core"
+description = "Realm grammar (versioned semantic->spatial mapping), Realm IR, and the renderer-side validator."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+navi-ontology.workspace = true
+serde.workspace = true
+serde_json.workspace = true

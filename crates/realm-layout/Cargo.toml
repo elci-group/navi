@@ -1,0 +1,11 @@
+[package]
+name = "realm-layout"
+description = "Deterministic 2D layout of Realm IR (containment packing on an integer grid)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+realm-core.workspace = true
+serde.workspace = true
+navi-ontology.workspace = true
