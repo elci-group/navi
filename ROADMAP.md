@@ -18,8 +18,10 @@ the next one starts.
       snapshot derivation, counterfactual forks, DVR lines), `realm-replay`
       (frames, snapshot + deltas with digests, reconstruction, COMPARE),
       DVR page, counterfactual banners.
-- [ ] **Phase 4 — intervention.** Sandboxed block/isolate/revoke/rollback
-      behind the policy gates that Phase 0 already models.
+- [x] **Phase 4 — intervention.** `navi-simulator` (sandbox with fault
+      injection), `navi-actions` (approve / cancel in the log; run / roll
+      back in the sandbox as counterfactual branches), ontology 0.3
+      (verified interventions can be lifted), token-theft scenario.
 - [ ] **Phase 5 — adaptive world generation.** Semantic LOD, domain-specific
       geography (§11, §12).
 - [ ] **Phase 6 — production autonomy.** Only after replay, provenance,

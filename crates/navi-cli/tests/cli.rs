@@ -123,3 +123,66 @@ fn log_derive_check_dvr_fork() {
     assert_eq!(code, 0);
     assert!(state.contains("\"hyp:c2\""));
 }
+
+#[test]
+fn act_approve_run_rollback() {
+    let base = root()
+        .join("logs/repo-runtime.log.json")
+        .display()
+        .to_string();
+    let dir = std::env::temp_dir();
+    let p = |n: &str| {
+        dir.join(format!("navi-act-{}-{n}.json", std::process::id()))
+            .display()
+            .to_string()
+    };
+    let (code, _, err) = navi(&["act", "run", &base, "act:isolate"]);
+    assert_eq!(code, 1);
+    assert!(err.contains("awaiting authorisation"));
+    let (code, _, err) = navi(&["act", "approve", &base, "act:isolate", "--policy", "auto"]);
+    assert_eq!(code, 1);
+    assert!(err.contains("requires a human"));
+    let (code, _, _) = navi(&[
+        "act",
+        "approve",
+        &base,
+        "act:isolate",
+        "--human",
+        "oncall",
+        "-o",
+        &p("approved"),
+    ]);
+    assert_eq!(code, 0);
+    let (code, _, err) = navi(&[
+        "act",
+        "run",
+        &p("approved"),
+        "act:isolate",
+        "--fault",
+        "silent-noop",
+        "-o",
+        &p("noop"),
+    ]);
+    assert_eq!(code, 0);
+    assert!(err.contains("effect_not_observed"));
+    let (code, _, err) = navi(&["act", "run", &p("approved"), "act:isolate", "-o", &p("ran")]);
+    assert_eq!(code, 0);
+    assert!(err.contains("NOT REALITY"));
+    let (code, _, err) = navi(&[
+        "act",
+        "rollback",
+        &p("ran"),
+        "act:isolate",
+        "--by",
+        "oncall",
+        "-o",
+        &p("undone"),
+    ]);
+    assert_eq!(code, 0, "{err}");
+    let (code, out, _) = navi(&["log", "check", &p("undone")]);
+    assert_eq!(code, 0);
+    assert!(out.contains("COUNTERFACTUAL"));
+    for n in ["approved", "noop", "ran", "undone"] {
+        std::fs::remove_file(p(n)).ok();
+    }
+}

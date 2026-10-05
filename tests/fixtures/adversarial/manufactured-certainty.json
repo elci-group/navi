@@ -1,5 +1,5 @@
 {
-  "ontology_version": "navi-ontology/0.2",
+  "ontology_version": "navi-ontology/0.3",
   "observations": [
     {
       "id": "obs:inv-cmdb",

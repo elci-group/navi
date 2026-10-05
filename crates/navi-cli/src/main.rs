@@ -68,6 +68,9 @@ enum Command {
     /// Incident logs: derive, check, replay, fork (directive §15, §16).
     #[command(subcommand)]
     Log(LogCommand),
+    /// Interventions: approve, cancel, run in the sandbox, roll back (§25 Phase 4).
+    #[command(subcommand)]
+    Act(ActCommand),
     /// Show the default production authority policy.
     Policy,
 }
@@ -99,6 +102,193 @@ enum LogCommand {
         #[arg(short, long)]
         output: Option<PathBuf>,
     },
+}
+
+#[derive(Subcommand)]
+enum ActCommand {
+    /// Record an approval (a real operator decision) in the log.
+    Approve {
+        log: PathBuf,
+        action: String,
+        /// A human principal (required for human-gated capabilities).
+        #[arg(long, conflicts_with = "policy")]
+        human: Option<String>,
+        /// A policy rule (only for policy-gated capabilities).
+        #[arg(long)]
+        policy: Option<String>,
+        #[arg(long, allow_negative_numbers = true)]
+        at: Option<i64>,
+        #[arg(long)]
+        expires_at: Option<i64>,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Stop a pending intervention.
+    Cancel {
+        log: PathBuf,
+        action: String,
+        #[arg(long)]
+        by: String,
+        #[arg(long)]
+        reason: String,
+        #[arg(long)]
+        at: Option<i64>,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Execute an authorised action in the sandbox; writes a counterfactual branch.
+    Run {
+        log: PathBuf,
+        action: String,
+        #[arg(long)]
+        at: Option<i64>,
+        /// Inject a fault: command-fails, silent-noop, verification-fails.
+        #[arg(long)]
+        fault: Vec<String>,
+        /// Undo the intervention if it does not take or does not verify.
+        #[arg(long)]
+        rollback_on_failure: bool,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+    /// Undo an executed intervention in the sandbox; writes a counterfactual branch.
+    Rollback {
+        log: PathBuf,
+        action: String,
+        #[arg(long)]
+        by: String,
+        #[arg(long)]
+        at: Option<i64>,
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
+}
+
+fn act_command(cmd: ActCommand) -> ExitCode {
+    use navi_ontology::{ActionId, Timestamp};
+    let refused = |e: navi_actions::Refusal| {
+        eprintln!("refused: {e}");
+        ExitCode::from(1)
+    };
+    let action_id = |s: &str| ActionId::new(s.to_string()).map_err(|e| e.to_string());
+    let json = |l: &navi_events::IncidentLog| {
+        serde_json::to_string_pretty(l).expect("serializable") + "\n"
+    };
+    let report = |r: &navi_actions::Run| {
+        for line in &r.narrative {
+            eprintln!("  {line}");
+        }
+        eprintln!(
+            "outcome: {}",
+            serde_json::to_string(&r.outcome).unwrap_or_default()
+        );
+        if let Some(b) = &r.branch.branch {
+            eprintln!(
+                "branch: \"{}\" (NOT REALITY; forked from {})",
+                b.label, b.fork_of
+            );
+        }
+    };
+    macro_rules! load_both {
+        ($log:expr, $action:expr) => {
+            match (read_log(&$log), action_id(&$action)) {
+                (Ok(l), Ok(a)) => (l, a),
+                (Err(e), _) | (_, Err(e)) => {
+                    eprintln!("{e}");
+                    return ExitCode::from(1);
+                }
+            }
+        };
+    }
+    match cmd {
+        ActCommand::Approve {
+            log,
+            action,
+            human,
+            policy,
+            at,
+            expires_at,
+            output,
+        } => {
+            let (l, a) = load_both!(log, action);
+            let by = match (human, policy) {
+                (Some(h), None) => navi_actions::Approver::Human(h),
+                (None, Some(p)) => navi_actions::Approver::Policy(p),
+                _ => {
+                    eprintln!("name exactly one approver: --human NAME or --policy RULE");
+                    return ExitCode::from(2);
+                }
+            };
+            match navi_actions::approve(&l, &a, by, at.map(Timestamp), expires_at.map(Timestamp)) {
+                Ok(next) => write_out(output, &json(&next)),
+                Err(e) => refused(e),
+            }
+        }
+        ActCommand::Cancel {
+            log,
+            action,
+            by,
+            reason,
+            at,
+            output,
+        } => {
+            let (l, a) = load_both!(log, action);
+            match navi_actions::cancel(&l, &a, &by, &reason, at.map(Timestamp)) {
+                Ok(next) => write_out(output, &json(&next)),
+                Err(e) => refused(e),
+            }
+        }
+        ActCommand::Run {
+            log,
+            action,
+            at,
+            fault,
+            rollback_on_failure,
+            output,
+        } => {
+            let (l, a) = load_both!(log, action);
+            let mut faults = navi_simulator::Faults::default();
+            for f in fault {
+                match f.as_str() {
+                    "command-fails" => faults.command_fails = true,
+                    "silent-noop" => faults.silent_noop = true,
+                    "verification-fails" => faults.verification_fails = true,
+                    other => {
+                        eprintln!("unknown fault {other:?} (command-fails, silent-noop, verification-fails)");
+                        return ExitCode::from(2);
+                    }
+                }
+            }
+            let opts = navi_actions::RunOptions {
+                at: at.map(Timestamp),
+                faults,
+                rollback_on_failure,
+            };
+            match navi_actions::run(&l, &a, opts) {
+                Ok(r) => {
+                    report(&r);
+                    write_out(output, &json(&r.branch))
+                }
+                Err(e) => refused(e),
+            }
+        }
+        ActCommand::Rollback {
+            log,
+            action,
+            by,
+            at,
+            output,
+        } => {
+            let (l, a) = load_both!(log, action);
+            match navi_actions::roll_back(&l, &a, &by, at.map(Timestamp)) {
+                Ok(r) => {
+                    report(&r);
+                    write_out(output, &json(&r.branch))
+                }
+                Err(e) => refused(e),
+            }
+        }
+    }
 }
 
 fn read_log(file: &PathBuf) -> Result<navi_events::IncidentLog, String> {
@@ -337,6 +527,7 @@ fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Command::Log(cmd) => log_command(cmd),
+        Command::Act(cmd) => act_command(cmd),
         Command::Policy => {
             let p = AuthorityPolicy::default_production();
             outln!("authority policy {}", p.version);

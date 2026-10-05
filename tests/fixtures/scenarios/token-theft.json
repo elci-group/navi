@@ -1,0 +1,619 @@
+{
+  "ontology_version": "navi-ontology/0.3",
+  "observations": [
+    {
+      "id": "obs:inv",
+      "source": {
+        "system": "cmdb",
+        "collector": "cmdb-sync/1"
+      },
+      "observed_at": 0,
+      "kind": "inventory.snapshot",
+      "attributes": {
+        "environment": "prod"
+      }
+    },
+    {
+      "id": "obs:vault-inv",
+      "source": {
+        "system": "vault",
+        "collector": "vault-audit/1"
+      },
+      "observed_at": 0,
+      "kind": "credential.inventory",
+      "attributes": {
+        "tokens": 1
+      }
+    },
+    {
+      "id": "obs:gw-auth-cfg",
+      "source": {
+        "system": "api-gateway",
+        "collector": "gw-config/1"
+      },
+      "observed_at": 0,
+      "subject": "ent:api-gw",
+      "kind": "auth.config",
+      "attributes": {
+        "method": "bearer"
+      }
+    },
+    {
+      "id": "obs:token-use",
+      "source": {
+        "system": "api-gateway",
+        "collector": "gw-logs/eu-1"
+      },
+      "observed_at": 1000,
+      "subject": "ent:deploy-token",
+      "kind": "auth.token_use",
+      "attributes": {
+        "src": "198.51.100.23",
+        "geo": "never seen",
+        "calls": 214
+      },
+      "raw_ref": "loki://gw/2026-10-05T09:12:00Z"
+    },
+    {
+      "id": "obs:token-scope",
+      "source": {
+        "system": "vault",
+        "collector": "vault-audit/1"
+      },
+      "observed_at": 1800,
+      "subject": "ent:deploy-token",
+      "kind": "credential.scope_use",
+      "attributes": {
+        "endpoints": [
+          "/payouts"
+        ],
+        "usual": [
+          "/deploy"
+        ]
+      }
+    },
+    {
+      "id": "obs:ip-rep",
+      "source": {
+        "system": "threat-intel",
+        "collector": "ti-enricher/2"
+      },
+      "observed_at": 2500,
+      "subject": "ent:ext-198",
+      "kind": "threatintel.reputation",
+      "attributes": {
+        "listed": true
+      }
+    }
+  ],
+  "entities": [
+    {
+      "id": "ent:org",
+      "class": "organisation",
+      "name": "lc",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:prod",
+      "class": "environment",
+      "name": "prod",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:payments",
+      "class": "domain",
+      "name": "payments",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:api-gw",
+      "class": "endpoint",
+      "name": "payments-gateway",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        },
+        {
+          "observation": "obs:gw-auth-cfg"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:payments-api",
+      "class": "service",
+      "name": "payments-api",
+      "trust": "trusted",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:deploy-token",
+      "class": "credential",
+      "name": "ci-deploy-token",
+      "trust": "unverified",
+      "provenance": [
+        {
+          "observation": "obs:vault-inv"
+        }
+      ],
+      "observed_at": 0
+    },
+    {
+      "id": "ent:ext-198",
+      "class": "external_actor",
+      "name": "198.51.100.23",
+      "trust": "unknown",
+      "provenance": [
+        {
+          "observation": "obs:token-use"
+        }
+      ],
+      "observed_at": 1000
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel:org-prod",
+      "kind": "contains",
+      "from": "ent:org",
+      "to": "ent:prod",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ]
+    },
+    {
+      "id": "rel:prod-pay",
+      "kind": "contains",
+      "from": "ent:prod",
+      "to": "ent:payments",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ]
+    },
+    {
+      "id": "rel:pay-gw",
+      "kind": "contains",
+      "from": "ent:payments",
+      "to": "ent:api-gw",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ]
+    },
+    {
+      "id": "rel:pay-api",
+      "kind": "contains",
+      "from": "ent:payments",
+      "to": "ent:payments-api",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ]
+    },
+    {
+      "id": "rel:pay-token",
+      "kind": "contains",
+      "from": "ent:payments",
+      "to": "ent:deploy-token",
+      "provenance": [
+        {
+          "observation": "obs:vault-inv"
+        }
+      ]
+    },
+    {
+      "id": "rel:gw-api",
+      "kind": "communicates_with",
+      "from": "ent:api-gw",
+      "to": "ent:payments-api",
+      "provenance": [
+        {
+          "observation": "obs:inv"
+        }
+      ]
+    },
+    {
+      "id": "rel:token-gw",
+      "kind": "authenticates_to",
+      "from": "ent:deploy-token",
+      "to": "ent:api-gw",
+      "provenance": [
+        {
+          "observation": "obs:gw-auth-cfg"
+        }
+      ]
+    },
+    {
+      "id": "rel:ext-gw",
+      "kind": "communicates_with",
+      "from": "ent:ext-198",
+      "to": "ent:api-gw",
+      "provenance": [
+        {
+          "observation": "obs:token-use"
+        }
+      ]
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "hyp:token-theft",
+      "subjects": [
+        "ent:deploy-token",
+        "ent:api-gw"
+      ],
+      "claim": "stolen_access_token",
+      "attack": [
+        "TA0006",
+        "T1528"
+      ],
+      "opened_at": 1200,
+      "opened_as": "ANOMALOUS",
+      "initial_confidence": {
+        "value": 0.4,
+        "estimator": {
+          "name": "token-misuse",
+          "version": "0.1"
+        }
+      },
+      "initial_evidence": [
+        {
+          "observation": "obs:token-use"
+        }
+      ],
+      "transitions": [
+        {
+          "at": 1900,
+          "from": "ANOMALOUS",
+          "to": "SUSPICIOUS",
+          "confidence": {
+            "value": 0.58,
+            "estimator": {
+              "name": "token-misuse",
+              "version": "0.1"
+            }
+          },
+          "evidence": [
+            {
+              "observation": "obs:token-scope"
+            }
+          ],
+          "reason": "deploy token calling /payouts it never uses"
+        },
+        {
+          "at": 2600,
+          "from": "SUSPICIOUS",
+          "to": "PROBABLE",
+          "confidence": {
+            "value": 0.78,
+            "estimator": {
+              "name": "token-misuse",
+              "version": "0.1"
+            }
+          },
+          "evidence": [
+            {
+              "observation": "obs:ip-rep"
+            }
+          ],
+          "reason": "source IP reputation-listed"
+        }
+      ]
+    }
+  ],
+  "threats": [
+    {
+      "id": "thr:token-theft",
+      "hypothesis": "hyp:token-theft",
+      "actor": "ent:ext-198",
+      "targets": [
+        "ent:deploy-token",
+        "ent:api-gw"
+      ]
+    }
+  ],
+  "safeguards": [
+    {
+      "id": "sg:gw-auth",
+      "kind": "authentication",
+      "name": "bearer auth",
+      "protects": [
+        "ent:api-gw"
+      ],
+      "status": "active",
+      "provenance": [
+        {
+          "observation": "obs:gw-auth-cfg"
+        }
+      ]
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "cap:scan",
+      "kind": "SCAN",
+      "scope": [
+        "ent:org"
+      ],
+      "target_classes": [
+        "endpoint",
+        "service",
+        "credential",
+        "external_actor"
+      ],
+      "authority": "query",
+      "risk_class": "low",
+      "approval_requirement": "autonomous",
+      "rollback_method": "not_applicable",
+      "verification_method": "query returned a result set",
+      "expiry": "never"
+    },
+    {
+      "id": "cap:lock",
+      "kind": "LOCK",
+      "scope": [
+        "ent:payments"
+      ],
+      "target_classes": [
+        "credential"
+      ],
+      "authority": "credential_revocation",
+      "risk_class": "high",
+      "approval_requirement": "human_approval",
+      "rollback_method": {
+        "method": "reissue the token to the CI system"
+      },
+      "verification_method": "token rejected on use",
+      "expiry": "never"
+    },
+    {
+      "id": "cap:barrier",
+      "kind": "BARRIER",
+      "scope": [
+        "ent:payments"
+      ],
+      "target_classes": [
+        "endpoint"
+      ],
+      "authority": "permanent_policy_change",
+      "risk_class": "high",
+      "approval_requirement": "human_approval",
+      "rollback_method": {
+        "method": "remove the deny rule"
+      },
+      "verification_method": "blocked source receives 403",
+      "expiry": "never"
+    }
+  ],
+  "agents": [
+    {
+      "id": "agent:navi-02",
+      "name": "LC-DEFENCE-02",
+      "role": "guardian",
+      "loadout": [
+        "cap:scan",
+        "cap:lock",
+        "cap:barrier"
+      ]
+    }
+  ],
+  "agent_events": [
+    {
+      "agent": "agent:navi-02",
+      "seq": 1,
+      "at": 1000,
+      "phase": "PERCEIVE",
+      "reason": "deploy token used from a never-seen location",
+      "authority": "observe",
+      "target": "ent:deploy-token",
+      "objective": "Contain misuse of ci-deploy-token",
+      "next": {
+        "phase": "ORIENT",
+        "target": "ent:deploy-token",
+        "intent": "locate the credential"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 2,
+      "at": 1100,
+      "phase": "ORIENT",
+      "reason": "CI deploy token for payments",
+      "authority": "query",
+      "target": "ent:deploy-token",
+      "objective": "Contain misuse of ci-deploy-token",
+      "next": {
+        "phase": "HYPOTHESISE",
+        "target": "ent:deploy-token",
+        "intent": "classify the token use"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 3,
+      "at": 1200,
+      "phase": "HYPOTHESISE",
+      "reason": "token use from novel source",
+      "authority": "correlate",
+      "target": "ent:deploy-token",
+      "objective": "Contain misuse of ci-deploy-token",
+      "hypothesis": "hyp:token-theft",
+      "confidence": {
+        "value": 0.4,
+        "estimator": {
+          "name": "token-misuse",
+          "version": "0.1"
+        }
+      },
+      "next": {
+        "phase": "INVESTIGATE",
+        "target": "ent:ext-198",
+        "intent": "check the source"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 4,
+      "at": 2500,
+      "phase": "INVESTIGATE",
+      "reason": "source reputation and endpoint scope",
+      "authority": "query",
+      "target": "ent:ext-198",
+      "objective": "Contain misuse of ci-deploy-token",
+      "hypothesis": "hyp:token-theft",
+      "confidence": {
+        "value": 0.58,
+        "estimator": {
+          "name": "token-misuse",
+          "version": "0.1"
+        }
+      },
+      "next": {
+        "phase": "EVALUATE",
+        "target": "ent:deploy-token",
+        "intent": "weigh the evidence"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 5,
+      "at": 2600,
+      "phase": "EVALUATE",
+      "reason": "scope abuse plus listed source",
+      "authority": "correlate",
+      "target": "ent:deploy-token",
+      "objective": "Contain misuse of ci-deploy-token",
+      "hypothesis": "hyp:token-theft",
+      "confidence": {
+        "value": 0.78,
+        "estimator": {
+          "name": "token-misuse",
+          "version": "0.1"
+        }
+      },
+      "next": {
+        "phase": "PLAN",
+        "target": "ent:deploy-token",
+        "intent": "propose revocation and a block"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 6,
+      "at": 2700,
+      "phase": "PLAN",
+      "reason": "propose revoking the token",
+      "authority": "propose",
+      "target": "ent:deploy-token",
+      "objective": "Contain misuse of ci-deploy-token",
+      "hypothesis": "hyp:token-theft",
+      "action": "act:revoke",
+      "next": {
+        "phase": "AUTHORISE",
+        "target": "ent:deploy-token",
+        "intent": "seek human approval"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 7,
+      "at": 2800,
+      "phase": "AUTHORISE",
+      "reason": "credential revocation requires a human",
+      "authority": "propose",
+      "target": "ent:deploy-token",
+      "objective": "Contain misuse of ci-deploy-token",
+      "action": "act:revoke",
+      "next": {
+        "phase": "PLAN",
+        "target": "ent:api-gw",
+        "intent": "also propose a block"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 8,
+      "at": 2900,
+      "phase": "PLAN",
+      "reason": "propose blocking the source at the gateway",
+      "authority": "propose",
+      "target": "ent:api-gw",
+      "objective": "Contain misuse of ci-deploy-token",
+      "hypothesis": "hyp:token-theft",
+      "action": "act:block",
+      "next": {
+        "phase": "AUTHORISE",
+        "target": "ent:api-gw",
+        "intent": "seek human approval"
+      }
+    },
+    {
+      "agent": "agent:navi-02",
+      "seq": 9,
+      "at": 3000,
+      "phase": "AUTHORISE",
+      "reason": "permanent policy change requires a human",
+      "authority": "propose",
+      "target": "ent:api-gw",
+      "objective": "Contain misuse of ci-deploy-token",
+      "action": "act:block",
+      "next": {
+        "phase": "ACT",
+        "target": "ent:deploy-token",
+        "intent": "act once approved"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "act:revoke",
+      "agent": "agent:navi-02",
+      "capability": "cap:lock",
+      "target": "ent:deploy-token",
+      "hypothesis": "hyp:token-theft",
+      "rationale": "token used from a listed IP against endpoints it never calls",
+      "expected_effect": "token rejected on use",
+      "proposed_at": 2700
+    },
+    {
+      "id": "act:block",
+      "agent": "agent:navi-02",
+      "capability": "cap:barrier",
+      "target": "ent:api-gw",
+      "hypothesis": "hyp:token-theft",
+      "rationale": "source keeps probing with other credentials",
+      "expected_effect": "198.51.100.23 receives 403",
+      "proposed_at": 2900
+    }
+  ]
+}

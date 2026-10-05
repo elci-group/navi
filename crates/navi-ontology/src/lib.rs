@@ -60,4 +60,7 @@ pub use time::Timestamp;
 ///
 /// 0.2: agent events may declare `objective` and `next` (§8 HUD), so the
 /// realm never has to infer what Navi intends to do next.
-pub const ONTOLOGY_VERSION: &str = "navi-ontology/0.2";
+///
+/// 0.3: a VERIFIED intervention may be rolled back (lifting containment);
+/// VERIFIED is no longer terminal.
+pub const ONTOLOGY_VERSION: &str = "navi-ontology/0.3";

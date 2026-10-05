@@ -1,8 +1,8 @@
 {
   "log_version": "navi-log/0.1",
-  "ontology_version": "navi-ontology/0.2",
+  "ontology_version": "navi-ontology/0.3",
   "branch": {
-    "fork_of": "sha256:ce9924c2763f6ed458eb5d8f1c77ad24e97907b69bcbe87d43dfa5d32dad594f",
+    "fork_of": "sha256:71294b90446c90710ffe51d2b363efec4a47243b56c6142c83f5a2fddb3be216",
     "at": 4900,
     "label": "human approves quarantine at t+5200ms"
   },

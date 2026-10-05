@@ -168,6 +168,42 @@ impl IncidentLog {
         }
     }
 
+    /// Append events (at or after the log's last instant). The result is
+    /// validated in full, so an append can never make history illegal.
+    pub fn append(
+        &self,
+        events: Vec<(Timestamp, Event)>,
+    ) -> Result<IncidentLog, Vec<LogViolation>> {
+        let last = self.events.last().map(|e| e.at);
+        if let Some((t, _)) = events.iter().find(|(t, _)| last.is_some_and(|l| *t < l)) {
+            return Err(vec![LogViolation {
+                seq: None,
+                at: Some(*t),
+                message: "cannot append before the end of the log: it is append-only".into(),
+                graph: vec![],
+            }]);
+        }
+        let mut out = self.clone();
+        for (at, event) in events {
+            out.events.push(LogEntry {
+                seq: out.events.len() as u64 + 1,
+                at,
+                event,
+            });
+        }
+        let problems = out.validate();
+        if problems.is_empty() {
+            Ok(out)
+        } else {
+            Err(problems)
+        }
+    }
+
+    /// The last instant in the log, if any.
+    pub fn end(&self) -> Option<Timestamp> {
+        self.events.last().map(|e| e.at)
+    }
+
     /// Structural checks, then the strong property: the state after every
     /// instant is a valid semantic graph. Reports the first failing instant
     /// (later ones usually cascade from it).

@@ -4,6 +4,8 @@ members = [
     "crates/navi-ontology",
     "crates/navi-graph",
     "crates/navi-events",
+    "crates/navi-simulator",
+    "crates/navi-actions",
     "crates/navi-cli",
     "crates/realm-core",
     "crates/realm-compiler",
@@ -28,6 +30,8 @@ clap = { version = "4", features = ["derive"] }
 navi-ontology = { path = "crates/navi-ontology" }
 navi-graph = { path = "crates/navi-graph" }
 navi-events = { path = "crates/navi-events" }
+navi-simulator = { path = "crates/navi-simulator" }
+navi-actions = { path = "crates/navi-actions" }
 realm-core = { path = "crates/realm-core" }
 realm-compiler = { path = "crates/realm-compiler" }
 realm-layout = { path = "crates/realm-layout" }

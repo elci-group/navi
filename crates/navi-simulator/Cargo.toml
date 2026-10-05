@@ -1,0 +1,12 @@
+[package]
+name = "navi-simulator"
+description = "Deterministic sandbox estate for Navi interventions, with fault injection. Never touches real systems."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+navi-ontology.workspace = true
+navi-graph.workspace = true
+serde.workspace = true
+serde_json.workspace = true

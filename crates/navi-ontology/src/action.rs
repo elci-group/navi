@@ -36,10 +36,7 @@ pub enum ActionState {
 
 impl ActionState {
     pub fn is_terminal(self) -> bool {
-        matches!(
-            self,
-            Self::Verified | Self::Rejected | Self::Cancelled | Self::RolledBack
-        )
+        matches!(self, Self::Rejected | Self::Cancelled | Self::RolledBack)
     }
 
     /// Not yet touching reality: a human can still stop it (§26).
@@ -332,8 +329,10 @@ impl Action {
                     S::VerificationFailed
                 }
             }
+            // A verified intervention may still be lifted (doctrine V, §9
+            // expiry): rolling back is the only way out of VERIFIED.
             (
-                S::Executed | S::Succeeded | S::Failed | S::VerificationFailed,
+                S::Executed | S::Succeeded | S::Verified | S::Failed | S::VerificationFailed,
                 T::RollBack { .. },
             ) => S::RolledBack,
             (S::Executing, T::Cancel { .. }) => {
@@ -455,6 +454,32 @@ mod tests {
         assert_eq!(a.state_at(Timestamp(0)), Some(ActionState::Proposed));
         assert_eq!(a.state_at(Timestamp(2)), Some(ActionState::Executing));
         assert_eq!(a.state_at(Timestamp(99)), Some(ActionState::Executed));
+    }
+
+    #[test]
+    fn verified_containment_can_be_lifted() {
+        let mut a = action();
+        run_to_executed(&mut a);
+        a.apply(T::ObserveEffect {
+            at: Timestamp(4),
+            effect: obs("denied"),
+        })
+        .unwrap();
+        a.apply(T::Verify {
+            at: Timestamp(5),
+            method: "m".into(),
+            evidence: obs("probe"),
+            passed: true,
+        })
+        .unwrap();
+        assert!(!a.state().is_terminal());
+        a.apply(T::RollBack {
+            at: Timestamp(6),
+            evidence: obs("restored"),
+        })
+        .unwrap();
+        assert_eq!(a.state(), ActionState::RolledBack);
+        assert!(a.apply(T::BeginExecution { at: Timestamp(7) }).is_err());
     }
 
     #[test]

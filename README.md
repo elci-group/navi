@@ -9,12 +9,14 @@ embodied, observable presence.
 machine state → semantic state → spatial state → human perception
 ```
 
-**Status: Phase 3 (replay) complete.** Phase 0 built the semantic layer;
+**Status: Phase 4 (sandboxed intervention) complete.** Phase 0 built the semantic layer;
 Phase 1 projected it into a spatial realm; Phase 2 made Navi's attention
 move through it and explain itself; Phase 3 makes the whole incident
 replayable — every state change is an event, the realm can be rewound to
 any instant, compared across instants or against a counterfactual fork,
-and streamed to clients as a snapshot plus verifiable deltas.
+and streamed to clients as a snapshot plus verifiable deltas; Phase 4 lets
+Navi act — block, isolate, revoke, roll back — behind the approval gates,
+in a sandbox, with every outcome evidenced and independently verified.
 
 ![The repo + runtime scenario rendered as a realm](docs/realm-repo-runtime.svg)
 
@@ -33,6 +35,8 @@ interactive version.*
 |---|---|
 | `navi-ontology` | The canonical vocabulary: observations, entities, relationships, hypotheses, threats, safeguards, capabilities, authority, agents, actions, provenance, confidence. Each type enforces its own invariants on construction **and** on deserialization. |
 | `navi-events` | The incident log: event-sourced state where every prefix must be a valid graph; derivation from snapshots; counterfactual forks; DVR lines. |
+| `navi-simulator` | A deterministic sandbox estate built from the graph (flows, credentials, interventions in force), with fault injection. Reports only as `sandbox` observations. |
+| `navi-actions` | The gated executor: approve and cancel (recorded in the real log), run and roll back (sandbox only, written as a counterfactual branch). |
 | `navi-graph` | The semantic state graph. Validates a whole document (references, provenance grounding, authority fidelity, agent event stream), produces a canonical form + `sha256` digest, and reverse-resolves any object to raw observations. |
 | `navi-cli` | The `navi` binary. |
 | `realm-core` | The versioned realm grammar (§3), Realm IR (§4), visual contracts, and the validator every renderer must pass. |
@@ -107,6 +111,32 @@ had been observed — which is now fixed.
 
 An agent with no events yet is shown **idle**: its loadout is visible, but
 it has no phase, reason or exercised authority until it emits one.
+
+## Intervention (Phase 4)
+
+| Directive clause | Enforcement |
+|---|---|
+| §2 Reality ≠ realm | A sandbox run never writes to the incident it acts on. `navi act run` / `rollback` return a **branch** (Phase 3 fork machinery): marked counterfactual, pointing at its parent's digest, validated by every rule reality is, labelled NOT REALITY wherever it is rendered. Approvals and cancellations are real operator decisions and are recorded in the log they are given. |
+| §10 Gates | Nothing runs unless the action is `AUTHORISED`. `navi act approve` refuses an approval weaker than the effective gate (`--policy` for a human-gated capability), an approval of something not proposed, or an empty principal. Lapsed approvals and expired capabilities do not run. |
+| §7 Agent loop | Execution emits Navi's own `ACT` and `VERIFY` events, and only along legal edges: if Navi is not at `AUTHORISE` for this action it resumes through `PLAN → AUTHORISE`; if it has closed its loop (`LEARN`) the run is refused. |
+| §20 EXECUTE ≠ SUCCESS ≠ VERIFIED | The command returning OK yields `EXECUTED`. `SUCCEEDED` requires sandbox telemetry that shows the change (control in force *and* every affected flow / credential in the intended state) — the executor reads the content; the graph only checks timing. `VERIFIED` requires a separate probe using the capability's declared verification method. Injected faults prove it: `silent-noop` (OK but nothing changed) stays `EXECUTED`; `verification-fails` ends `VERIFICATION_FAILED`; `command-fails` ends `FAILED`. |
+| §26 Human interruption | `navi act cancel` stops a proposed or authorised action; once executed it can only be rolled back. |
+| Doctrine V Reversibility | `navi act rollback` (and `run --rollback-on-failure`) undoes an intervention only with observed restoration as evidence; capabilities declared irreversible refuse. Ontology 0.3 lets a `VERIFIED` intervention be rolled back — lifting containment is the normal end of a successful one. |
+
+Supported interventions: `SHIELD` (rate limit), `BARRIER` (block the
+attributed or observed external sources), `ISOLATE` (quarantine), `LOCK`
+(revoke a credential). Anything else is refused rather than approximated.
+`tests/fixtures/scenarios/token-theft.json` exercises revoke, block and
+rollback in one incident.
+
+```sh
+navi act approve incident.json act:isolate --human oncall -o approved.json
+navi act run     approved.json act:isolate -o sandbox.json            # branch: NOT REALITY
+navi act run     approved.json act:isolate --fault silent-noop --rollback-on-failure
+navi act rollback sandbox.json act:isolate --by oncall -o lifted.json
+navi act cancel  approved.json act:isolate --by oncall --reason "false positive"
+realm dvr sandbox.json -o sandbox-dvr.html
+```
 
 ## Usage
 
@@ -183,6 +213,11 @@ observation (directive §26, reverse resolution):
   changed but not withdrawn.
 - DVR pages embed one pre-rendered SVG per instant; fine for incidents of
   tens of instants, not for days of telemetry.
+- Interventions run only against the sandbox. There are no production
+  actuators, and Phase 6 (production autonomy) is gated on the directive's
+  reliability conditions.
+- The sandbox models flows, credentials and the controls interventions add;
+  it does not model collateral service impact yet (§17 ghosts).
 - An entity with several `contains` parents is nested under the first by
   relationship id; edges are drawn centre-to-centre without routing.
 
@@ -193,12 +228,13 @@ See [`ROADMAP.md`](ROADMAP.md).
 ## Testing
 
 ```sh
-cargo test                                   # 164 tests
+cargo test                                   # 184 tests
 cargo clippy --all-targets -- -D warnings
 ```
 
 Acceptance tests (`crates/navi-graph/tests/acceptance.rs`,
 `crates/realm-compiler/tests/phase1.rs`, `phase2.rs`,
-`crates/navi-events/tests/log.rs`, `crates/realm-replay/tests/replay.rs`) each start from a valid scenario
+`crates/navi-events/tests/log.rs`, `crates/realm-replay/tests/replay.rs`,
+`crates/navi-actions/tests/act.rs`) each start from a valid scenario
 and inject exactly one fault — into the semantic graph for Phase 0, into
 compiled Realm IR for Phase 1.
